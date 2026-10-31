@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Удельная теплоёмкость твёрдых тел</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Share+Tech+Mono&display=swap">
+<style>
+/* Рабочее место: слева ход работы, в центре установка ФПТ1-8, справа журнал отсчётов */
+:root{
+  --bg:#F4F3F1; --surface:#FFFFFF; --surface-2:#F3F1EE; --ink:#1A1714; --muted:#655F58; --line:#E1DDD7;
+  --accent:#C2410C; --accent-ink:#FFFFFF; --accent-soft:#FCEEE6; --signal:#B42318;
+  --font-ui:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+  --font-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --font-led:"Share Tech Mono","IBM Plex Mono",monospace;
+  --r:10px; color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--font-ui);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{padding-inline:16px;max-width:1600px;margin:0 auto}
+
+.top{position:sticky;top:0;z-index:20;background:rgba(244,243,241,.92);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;gap:14px 28px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;gap:14px;align-items:center;min-width:0}
+.badge{flex:none;width:50px;height:50px;border-radius:12px;background:var(--accent);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.badge span{font-size:10.5px;font-weight:700;letter-spacing:.06em;opacity:.8}
+.badge b{font-size:22px;font-weight:800}
+.brand small{color:var(--muted);font-size:12.5px;font-weight:600}
+.brand h1{margin:0;font-size:clamp(16px,1.5vw,20px);line-height:1.25;font-weight:750;text-wrap:balance}
+.hdr-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tabs{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.tabs a{padding:7px 14px;border-radius:999px;text-decoration:none;color:var(--muted);font-weight:650;font-size:13.5px;white-space:nowrap}
+.tabs a[aria-current="page"]{background:var(--ink);color:#fff}
+.tabs a:hover:not([aria-current="page"]){color:var(--ink);background:var(--surface-2)}
+main{padding-block:18px 48px}
+.view[hidden]{display:none!important}
+
+.setup{display:grid;grid-template-columns:300px minmax(0,1fr) 310px;gap:16px;align-items:start}
+@media (max-width:1280px){.setup{grid-template-columns:minmax(0,1fr) 310px}.steps-col{grid-column:1/-1;order:3}}
+@media (max-width:860px){.setup{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.panel h2,.panel h3{margin:0 0 12px;font-size:14.5px;font-weight:750}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+.steps{list-style:none;margin:0;padding:0}
+.steps li{position:relative;padding:0 0 11px 30px;font-size:13.2px;line-height:1.45}
+.steps li::before{content:"";position:absolute;left:5px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid #CBC5BD;background:var(--surface);box-sizing:border-box}
+.steps li::after{content:"";position:absolute;left:10px;top:19px;bottom:1px;width:2px;background:#E7E3DD}
+.steps li:last-child::after{display:none}
+.steps li.done::before{background:var(--accent);border-color:var(--accent)}
+.steps li.done::after{background:color-mix(in srgb,var(--accent) 35%,#E7E3DD)}
+.steps .n{font:600 11.5px var(--font-num);color:var(--muted);margin-right:3px}
+.steps li.done .n{color:var(--accent)}
+
+.stage-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;min-width:0}
+.stand-wrap{background:#E9E6E1;padding:12px;overflow-x:auto}
+#stand{display:block;width:100%;min-width:660px;height:auto;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.controls{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;padding:12px 16px;border-top:1px solid var(--line)}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctl .lbl{font-size:12.5px;color:var(--muted);font-weight:600}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:650;font-size:13.5px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;user-select:none;-webkit-user-select:none;line-height:1.2}
+.btn:hover{border-color:#C3BDB4}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.danger{color:var(--signal)}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:6px 11px;font:600 13px var(--font-num);cursor:pointer;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.muted{color:var(--muted)}
+.tiny{font-size:12.5px;line-height:1.45}
+.note-chip{font-size:12px;color:var(--muted)}
+
+.field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
+.field input,.field select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 8px;font:500 14px var(--font-num);color:var(--ink);min-width:0;width:100%}
+.field select{font-family:var(--font-ui);font-size:13.5px}
+.rec-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.jr{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;margin-top:12px}
+.jr th{font-weight:650;color:var(--muted);text-align:left;padding:5px 3px;border-bottom:1px solid var(--line);font-size:11px}
+.jr td{padding:5px 3px;border-bottom:1px solid var(--line);font-family:var(--font-num);font-size:12px}
+.jr td.m{font-family:var(--font-ui);font-weight:600}
+.jr tr:last-child td{border-bottom:0}
+.jr .x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0 3px}
+.jr .x:hover{color:var(--signal)}
+.empty{color:var(--muted);font-size:12.5px;padding:8px 0 0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font:600 13px var(--font-num)}
+
+.calc{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1100px){.calc{grid-template-columns:minmax(0,1fr)}}
+.tblwrap{overflow-x:auto}
+table.lab{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+table.lab th,table.lab td{border:1px solid var(--line);padding:6px 7px;text-align:center;vertical-align:middle}
+table.lab th{background:var(--surface-2);font-weight:700;font-size:12.5px;line-height:1.3}
+table.lab td{font-family:var(--font-num);font-size:13px}
+table.lab td.mat{font-family:var(--font-ui);font-weight:650;text-align:left}
+table.lab td input{width:100%;min-width:58px;border:1px solid transparent;background:var(--surface-2);border-radius:6px;padding:6px 4px;text-align:center;font:500 13px var(--font-num);color:var(--ink)}
+table.lab td input:hover{border-color:var(--line)}
+table.lab td input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+.formula{display:flex;flex-direction:column;gap:10px}
+.fline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 12px;background:var(--surface-2);border-radius:8px;border:1px solid var(--line);overflow-x:auto}
+.fline .cap{flex-basis:100%;font-size:12px;color:var(--muted);font-weight:600}
+math{font-family:"STIX Two Math","Cambria Math","Latin Modern Math","Times New Roman",serif;font-size:1.1em}
+textarea.conc{width:100%;min-height:150px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface);resize:vertical;line-height:1.55}
+textarea.conc:focus{border-color:var(--accent);outline:none}
+
+.theory{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1000px){.theory{grid-template-columns:minmax(0,1fr)}}
+.prose{max-width:74ch}
+.prose h2{font-size:17px;margin:0 0 8px}
+.prose h3{font-size:15px;margin:18px 0 6px}
+.prose p{margin:0 0 10px}
+.prose table{border-collapse:collapse;width:100%;font-size:13.5px;margin:6px 0 12px}
+.prose th,.prose td{border:1px solid var(--line);padding:5px 8px;text-align:center}
+.prose th{background:var(--surface-2);font-weight:700}
+.prose td:first-child{text-align:left}
+.prose figure{margin:8px 0 12px}
+.prose figcaption{font-size:12.5px;color:var(--muted);text-align:center}
+ol.qlist{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:8px}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;z-index:50;max-width:min(560px,calc(100vw - 32px));pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---------- телефон и режим предпросмотра ---------- */
+.nojs{margin:0 0 14px;padding:14px 16px;border-radius:10px;background:#FFF4E5;border:1px solid #F5C17A;color:#5A3A00;font-size:15px;line-height:1.5}
+.nojs b{display:block;font-size:16px;margin-bottom:4px}
+details.stepsbox>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px}
+details.stepsbox>summary::-webkit-details-marker{display:none}
+details.stepsbox>summary h2{margin:0}
+details.stepsbox>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-top:-4px;flex:none}
+details.stepsbox[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+details.stepsbox[open]>summary{margin-bottom:12px}
+.mob{display:none}
+.stand-wrap.fit #stand{min-width:0}
+@media (max-width:860px){
+  .top{position:static;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .stage-card{order:-1}
+  .steps-col{order:0}
+  .setup>aside:last-child{order:1}
+  .mob{display:flex}
+  input,select,textarea{font-size:16px!important}
+  .btn{min-height:40px}
+  .btn.small{min-height:36px}
+  .stand-wrap{padding:8px;-webkit-overflow-scrolling:touch}
+}
+@media (max-width:860px) and (orientation:landscape){.rot-hint{display:none}}
+@media (max-width:860px){
+  .hdr-right{width:100%}
+  .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:1 1 260px;border-radius:12px}
+  .tabs a{text-align:center;white-space:normal;line-height:1.2;border-radius:9px;padding:8px 6px;display:flex;align-items:center;justify-content:center}
+  .controls>.note-chip{display:none}
+}
+@media (max-height:520px) and (orientation:landscape){
+  .brand small{display:none}
+  .badge{width:40px;height:40px}
+  .badge b{font-size:18px}
+  .brand h1{font-size:15px}
+  .top .wrap{padding-block:8px}
+  .tabs a{padding:5px 12px}
+  main{padding-top:10px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="badge"><span>ЛР</span><b>9</b></div>
+      <div>
+        <small>Лабораторная работа № 9, установка ФПТ1-8</small>
+        <h1>Определение удельной теплоёмкости твёрдых тел</h1>
+      </div>
+    </div>
+    <div class="hdr-right">
+    <nav class="tabs" aria-label="Разделы">
+      <a href="#setup" data-tab="setup" aria-current="page">Установка</a>
+      <a href="#calc" data-tab="calc">Таблицы и расчёт</a>
+      <a href="#theory" data-tab="theory">Теория и вопросы</a>
+    </nav>
+    <button class="btn small danger" id="restartBtn" title="Стереть журнал, таблицы, вывод и все отметки">Начать заново</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="nojs" id="nojs"><b>Лаба открыта в режиме предпросмотра</b>В нём не работают скрипты, поэтому установка не оживает и вкладки не переключаются. Откройте лабу по ссылке в Safari или Chrome, тогда всё заработает</div>
+
+<!-- ============ УСТАНОВКА ============ -->
+<section class="view" id="v-setup">
+  <div class="setup">
+    <aside class="col steps-col">
+      <details class="panel stepsbox" open><summary><h2>Порядок выполнения работы</h2></summary>
+        <ol class="steps" id="steps">
+          <li><span class="n">5.1.</span>Вывести на минимум ручки потенциометров, повернув их в крайнее левое положение.</li>
+          <li><span class="n">5.2.</span>Снять экран с блока РЭ-8 и подвесить его на специальные винты с задней стороны блока РЭ-8.</li>
+          <li><span class="n">5.3.</span>Образцы, рукоятку вставить в гнёзда блока РЭ-8.</li>
+          <li><span class="n">5.4.</span>Подключить вилку питания к розетке сети переменного тока напряжением 220 В.</li>
+          <li><span class="n">5.5.</span>Включить тумблер в модуле питания СЕТЬ.</li>
+          <li><span class="n">5.6.</span>Убедиться, что в калориметре отсутствует образец. Плотно закрыть крышку калориметра.</li>
+          <li><span class="n">5.7.</span>Включить модуль нагрев тумблером «ВКЛ». Регулятором модуля установить мощность нагрева. Номинальное напряжение на нагревателе 18 В.</li>
+          <li><span class="n">5.8.</span>Одновременно с включением тумблера «ВКЛ» нажать кнопку цифрового контроллера для измерения времени.</li>
+          <li><span class="n">5.9.</span>Контролировать температуру по цифровому контроллеру для измерения температуры. Начальную температуру измерить до включения нагревателя. Конечная температура не должна превышать 44 °C.</li>
+          <li><span class="n">5.10.</span>При достижении конечной температуры выключить нагреватель и контроллер времени. Записать конечную температуру и время нагрева τ<sub>1</sub> пустого калориметра.</li>
+          <li><span class="n">5.11.</span>Охладить калориметр до начальной температуры. Для быстрого охлаждения выключить нагрев, открыть крышку. Температура начинает понижаться. Вставить в калориметр исследуемый образец (нагревшийся образец вынуть рукояткой выталкивания в нижней части калориметра).</li>
+          <li><span class="n">5.12.</span>Нагрев калориметра с образцом рекомендуется производить через 2–3 мин после установки образца в калориметр и закрытия крышки. Записать начальную температуру, включить нагреватель, установив такую же мощность, как в случае пустого калориметра, одновременно с запуском контроллера времени. Нагреть калориметр с образцом на ту же разность температур Δt.</li>
+          <li><span class="n">5.13.</span>Записать в таблицу время нагрева τ<sub>2</sub> калориметра с образцом.</li>
+          <li><span class="n">5.14.</span>По формуле (16) рассчитать удельную теплоёмкость исследуемого образца.</li>
+          <li><span class="n">5.15.</span>Провести измерения для остальных образцов по пп. 5.11–5.14.</li>
+          <li><span class="n">5.16.</span>Произвести расчёты удельной теплоёмкости исследуемых образцов по формуле Дюлонга и Пти (12) и сравнить с экспериментальными результатами. Сделать выводы.</li>
+        </ol>
+      </details>
+    </aside>
+
+    <div class="stage-card">
+      <div class="stand-wrap">
+        <svg id="stand" width="1000" height="660" viewBox="0 0 1000 660" aria-label="Установка ФПТ1-8: блок рабочего элемента с нагревателем, калориметром, термометром и образцами, приборный блок с вольтметром, амперметром, таймером и регулятором нагрева"><defs>
+    <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ECEAE6"></stop><stop offset="1" stop-color="#D3CFC8"></stop></linearGradient>
+    <linearGradient id="gPanel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B3F45"></stop><stop offset="1" stop-color="#26292E"></stop></linearGradient>
+    <linearGradient id="gBezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#30353C"></stop><stop offset="1" stop-color="#16191D"></stop></linearGradient>
+    <linearGradient id="gFace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFBF6"></stop><stop offset="1" stop-color="#ECE8DB"></stop></linearGradient>
+    <linearGradient id="gCase" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7E868E"></stop><stop offset=".3" stop-color="#C9CFD5"></stop><stop offset=".7" stop-color="#A8AFB7"></stop><stop offset="1" stop-color="#6F777F"></stop></linearGradient>
+    <linearGradient id="gCup" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9C5A2A"></stop><stop offset=".45" stop-color="#E0A06A"></stop><stop offset="1" stop-color="#8A4C22"></stop></linearGradient>
+    <linearGradient id="gLid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D5DADF"></stop><stop offset="1" stop-color="#8C949C"></stop></linearGradient>
+    <pattern id="wool" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#E9DDBE"></rect><path d="M0,6 Q2,2 4,5 T8,3" fill="none" stroke="#CDBB8E" stroke-width="1"></path></pattern>
+    <radialGradient id="gKnob" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#5A6069"></stop><stop offset=".6" stop-color="#1E2227"></stop><stop offset="1" stop-color="#0C0E10"></stop></radialGradient>
+    <radialGradient id="gKnobCap" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#8E959E"></stop><stop offset="1" stop-color="#3A4048"></stop></radialGradient>
+    <linearGradient id="gRock" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C535C"></stop><stop offset="1" stop-color="#1B1E22"></stop></linearGradient>
+    <radialGradient id="gBtn" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#E9EDF0"></stop><stop offset="1" stop-color="#8E969E"></stop></radialGradient>
+    <linearGradient id="gGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".55"></stop><stop offset=".4" stop-color="#D9EEF4" stop-opacity=".22"></stop><stop offset="1" stop-color="#FFFFFF" stop-opacity=".45"></stop></linearGradient><linearGradient id="gS_st" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8D959D"></stop><stop offset=".4" stop-color="#C5CBD1"></stop><stop offset="1" stop-color="#8D959D"></stop></linearGradient><linearGradient id="gS_al" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#BFC5CC"></stop><stop offset=".4" stop-color="#EEF1F4"></stop><stop offset="1" stop-color="#BFC5CC"></stop></linearGradient><linearGradient id="gS_br" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C29A3C"></stop><stop offset=".4" stop-color="#EED48A"></stop><stop offset="1" stop-color="#C29A3C"></stop></linearGradient></defs>
+  <style>
+    .eng{font:600 13px var(--font-ui);fill:#D5DAE1;letter-spacing:.04em}
+    .eng.sm{font-size:10.5px;letter-spacing:0;fill:#AEB5BF}
+    .lab{font:700 11.5px var(--font-ui);fill:#5A544C;letter-spacing:.06em}
+    .led{font:42px var(--font-led);fill:#FF4B33}
+    .ledg{font:42px var(--font-led);fill:#57F287}
+    .knob,.rock{touch-action:none}
+    .hit{cursor:pointer}
+    .smpTxt{font:700 11.5px var(--font-ui);fill:#2E2A25}
+    .smpM{font:500 10.5px var(--font-num);fill:#5A544C}
+  </style><rect x="20" y="14" width="456" height="632" rx="14" fill="url(#gBody)" stroke="#B4AEA5"></rect><text x="40" y="38" class="lab">БЛОК РАБОЧЕГО ЭЛЕМЕНТА РЭ-8</text><rect x="78" y="70" width="340" height="276" rx="10" fill="url(#gCase)" stroke="#5E666E"></rect><rect x="96" y="112" width="304" height="218" rx="4" fill="url(#wool)" stroke="#9C8F6E"></rect><text x="112" y="320" style="font:600 10px var(--font-ui);fill:#7E7254">теплоизоляция</text><rect x="190" y="112" width="116" height="206" fill="url(#gCup)" stroke="#6E3B17"></rect><rect x="200" y="112" width="96" height="196" fill="#2A211B"></rect><g id="coil" fill="#9C5A2A"><rect x="182" y="120" width="8" height="4.5" rx="2"></rect><rect x="306" y="120" width="8" height="4.5" rx="2"></rect><rect x="182" y="129" width="8" height="4.5" rx="2"></rect><rect x="306" y="129" width="8" height="4.5" rx="2"></rect><rect x="182" y="138" width="8" height="4.5" rx="2"></rect><rect x="306" y="138" width="8" height="4.5" rx="2"></rect><rect x="182" y="147" width="8" height="4.5" rx="2"></rect><rect x="306" y="147" width="8" height="4.5" rx="2"></rect><rect x="182" y="156" width="8" height="4.5" rx="2"></rect><rect x="306" y="156" width="8" height="4.5" rx="2"></rect><rect x="182" y="165" width="8" height="4.5" rx="2"></rect><rect x="306" y="165" width="8" height="4.5" rx="2"></rect><rect x="182" y="174" width="8" height="4.5" rx="2"></rect><rect x="306" y="174" width="8" height="4.5" rx="2"></rect><rect x="182" y="183" width="8" height="4.5" rx="2"></rect><rect x="306" y="183" width="8" height="4.5" rx="2"></rect><rect x="182" y="192" width="8" height="4.5" rx="2"></rect><rect x="306" y="192" width="8" height="4.5" rx="2"></rect><rect x="182" y="201" width="8" height="4.5" rx="2"></rect><rect x="306" y="201" width="8" height="4.5" rx="2"></rect><rect x="182" y="210" width="8" height="4.5" rx="2"></rect><rect x="306" y="210" width="8" height="4.5" rx="2"></rect><rect x="182" y="219" width="8" height="4.5" rx="2"></rect><rect x="306" y="219" width="8" height="4.5" rx="2"></rect><rect x="182" y="228" width="8" height="4.5" rx="2"></rect><rect x="306" y="228" width="8" height="4.5" rx="2"></rect><rect x="182" y="237" width="8" height="4.5" rx="2"></rect><rect x="306" y="237" width="8" height="4.5" rx="2"></rect><rect x="182" y="246" width="8" height="4.5" rx="2"></rect><rect x="306" y="246" width="8" height="4.5" rx="2"></rect><rect x="182" y="255" width="8" height="4.5" rx="2"></rect><rect x="306" y="255" width="8" height="4.5" rx="2"></rect><rect x="182" y="264" width="8" height="4.5" rx="2"></rect><rect x="306" y="264" width="8" height="4.5" rx="2"></rect><rect x="182" y="273" width="8" height="4.5" rx="2"></rect><rect x="306" y="273" width="8" height="4.5" rx="2"></rect><rect x="182" y="282" width="8" height="4.5" rx="2"></rect><rect x="306" y="282" width="8" height="4.5" rx="2"></rect><rect x="182" y="291" width="8" height="4.5" rx="2"></rect><rect x="306" y="291" width="8" height="4.5" rx="2"></rect><rect x="182" y="300" width="8" height="4.5" rx="2"></rect><rect x="306" y="300" width="8" height="4.5" rx="2"></rect><rect x="182" y="309" width="8" height="4.5" rx="2"></rect><rect x="306" y="309" width="8" height="4.5" rx="2"></rect></g><rect x="290" y="236" width="9" height="16" fill="#1E2328"></rect><path d="M299,244 C330,244 340,300 352,346" fill="none" stroke="#3A3F45" stroke-width="2"></path><text x="318" y="230" style="font:600 10px var(--font-ui);fill:#2E2A25">датчик</text><g id="cupSample"></g><g id="eject" class="hit" tabindex="0"><rect x="242" y="318" width="12" height="44" fill="#6E767E"></rect><rect x="214" y="360" width="68" height="16" rx="8" fill="#2A2E33"></rect><text x="248" y="392" text-anchor="middle" style="font:600 10px var(--font-ui);fill:#3B362F">ручка выталкивания</text></g><g id="lid" class="hit" tabindex="0" transform=""><rect x="176" y="92" width="144" height="20" rx="4" fill="url(#gLid)" stroke="#5E666E"></rect><rect x="234" y="80" width="28" height="13" rx="3" fill="#2A2E33"></rect></g><text id="lidTxt" x="248" y="64" text-anchor="middle" style="font:600 11px var(--font-ui);fill:#3B362F">крышка закрыта</text><rect x="112" y="404" width="270" height="86" rx="9" fill="url(#gBezel)"></rect><rect x="126" y="416" width="170" height="54" rx="4" fill="#06120A"></rect><text id="tDisp" x="284" y="459" text-anchor="end" class="ledg"></text><text x="306" y="438" style="font:600 16px var(--font-ui);fill:#9DE8B4">°C</text><text x="306" y="462" class="eng sm">U838</text><text x="247" y="484" text-anchor="middle" class="eng sm">ТЕМПЕРАТУРА</text><rect x="40" y="512" width="416" height="118" rx="8" fill="#C3BDB3" stroke="#A39C90"></rect><ellipse cx="120" cy="604" rx="26" ry="7" fill="#7D766B"></ellipse><ellipse cx="210" cy="604" rx="26" ry="7" fill="#7D766B"></ellipse><ellipse cx="300" cy="604" rx="26" ry="7" fill="#7D766B"></ellipse><ellipse cx="396" cy="604" rx="18" ry="6" fill="#7D766B"></ellipse><g id="shelf"></g><g id="box" class="hit" tabindex="0"><rect x="120" y="534" width="250" height="78" rx="6" fill="#B8803F" stroke="#7C5223"></rect><rect x="120" y="534" width="250" height="18" rx="6" fill="#CC9450"></rect>
+    <text x="245" y="578" text-anchor="middle" style="font:700 13px var(--font-ui);fill:#3B240B">Коробка с образцами</text>
+    <text x="245" y="597" text-anchor="middle" style="font:500 11px var(--font-ui);fill:#4E3212">нажмите, чтобы вставить в гнёзда</text></g><g id="screen" class="hit" tabindex="0"><rect x="32" y="48" width="432" height="458" rx="8" fill="url(#gGlass)" stroke="#9FB6BF" stroke-width="2"></rect>
+    <path d="M60,90 L170,60 M70,150 L240,80" stroke="#fff" stroke-width="6" opacity=".35" stroke-linecap="round"></path>
+    <rect x="164" y="248" width="168" height="30" rx="15" fill="#1A1714" opacity=".78"></rect><text x="248" y="268" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#fff">Снять экран</text></g><rect x="492" y="14" width="488" height="304" rx="14" fill="url(#gPanel)" stroke="#121417"></rect><text x="512" y="38" class="eng sm" style="letter-spacing:.08em">БЛОК ПРИБОРНЫЙ БП-8</text><g><rect x="512" y="50" width="206" height="168" rx="9" fill="url(#gBezel)"></rect><rect x="522" y="60" width="186" height="134" rx="4" fill="url(#gFace)"></rect><g stroke="#1A1A1A"><line x1="556.7" y1="133.7" x2="565.9" y2="142.9" stroke-width="1.4"></line><line x1="559.9" y1="130.8" x2="563.5" y2="134.9" stroke-width="0.75"></line><line x1="563.1" y1="128.0" x2="566.6" y2="132.2" stroke-width="0.75"></line><line x1="566.6" y1="125.3" x2="569.8" y2="129.8" stroke-width="0.75"></line><line x1="570.1" y1="122.9" x2="573.1" y2="127.5" stroke-width="0.75"></line><line x1="573.8" y1="120.6" x2="578.3" y2="128.4" stroke-width="0.75"></line><line x1="577.6" y1="118.6" x2="580.1" y2="123.5" stroke-width="0.75"></line><line x1="581.5" y1="116.7" x2="583.7" y2="121.7" stroke-width="0.75"></line><line x1="585.5" y1="115.1" x2="587.4" y2="120.2" stroke-width="0.75"></line><line x1="589.5" y1="113.6" x2="591.2" y2="118.9" stroke-width="0.75"></line><line x1="593.7" y1="112.4" x2="597.0" y2="125.0" stroke-width="1.4"></line><line x1="597.9" y1="111.4" x2="599.0" y2="116.8" stroke-width="0.75"></line><line x1="602.1" y1="110.6" x2="603.0" y2="116.0" stroke-width="0.75"></line><line x1="606.4" y1="110.1" x2="607.0" y2="115.5" stroke-width="0.75"></line><line x1="610.7" y1="109.7" x2="611.0" y2="115.2" stroke-width="0.75"></line><line x1="615.0" y1="109.6" x2="615.0" y2="118.6" stroke-width="0.75"></line><line x1="619.3" y1="109.7" x2="619.0" y2="115.2" stroke-width="0.75"></line><line x1="623.6" y1="110.1" x2="623.0" y2="115.5" stroke-width="0.75"></line><line x1="627.9" y1="110.6" x2="627.0" y2="116.0" stroke-width="0.75"></line><line x1="632.1" y1="111.4" x2="631.0" y2="116.8" stroke-width="0.75"></line><line x1="636.3" y1="112.4" x2="633.0" y2="125.0" stroke-width="1.4"></line><line x1="640.5" y1="113.6" x2="638.8" y2="118.9" stroke-width="0.75"></line><line x1="644.5" y1="115.1" x2="642.6" y2="120.2" stroke-width="0.75"></line><line x1="648.5" y1="116.7" x2="646.3" y2="121.7" stroke-width="0.75"></line><line x1="652.4" y1="118.6" x2="649.9" y2="123.5" stroke-width="0.75"></line><line x1="656.2" y1="120.6" x2="651.7" y2="128.4" stroke-width="0.75"></line><line x1="659.9" y1="122.9" x2="656.9" y2="127.5" stroke-width="0.75"></line><line x1="663.4" y1="125.3" x2="660.2" y2="129.8" stroke-width="0.75"></line><line x1="666.9" y1="128.0" x2="663.4" y2="132.2" stroke-width="0.75"></line><line x1="670.1" y1="130.8" x2="666.5" y2="134.9" stroke-width="0.75"></line><line x1="673.3" y1="133.7" x2="664.1" y2="142.9" stroke-width="1.4"></line></g><text x="546.8" y="127.8" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">0</text><text x="566.8" y="112.5" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">5</text><text x="590.0" y="102.9" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">10</text><text x="615.0" y="99.6" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">15</text><text x="640.0" y="102.9" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">20</text><text x="663.2" y="112.5" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">25</text><text x="683.2" y="127.8" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">30</text><text x="615" y="157.392" text-anchor="middle" style="font:700 19px var(--font-ui);fill:#1A1A1A">В</text><text x="530" y="186" style="font:600 10px var(--font-num);fill:#333">1,5</text><g id="nV" transform="rotate(-45.000 615 200)"><line x1="615" y1="198" x2="615" y2="108.6" stroke="#B42318" stroke-width="1.5"></line></g><circle cx="615" cy="192" r="6" fill="#23272C"></circle></g><g><rect x="732" y="50" width="206" height="168" rx="9" fill="url(#gBezel)"></rect><rect x="742" y="60" width="186" height="134" rx="4" fill="url(#gFace)"></rect><g stroke="#1A1A1A"><line x1="776.7" y1="133.7" x2="785.9" y2="142.9" stroke-width="1.4"></line><line x1="779.1" y1="131.5" x2="782.8" y2="135.5" stroke-width="0.75"></line><line x1="781.5" y1="129.3" x2="785.1" y2="133.5" stroke-width="0.75"></line><line x1="784.0" y1="127.3" x2="787.4" y2="131.6" stroke-width="0.75"></line><line x1="786.6" y1="125.3" x2="789.8" y2="129.8" stroke-width="0.75"></line><line x1="789.2" y1="123.5" x2="794.2" y2="131.0" stroke-width="0.75"></line><line x1="791.9" y1="121.7" x2="794.8" y2="126.4" stroke-width="0.75"></line><line x1="794.7" y1="120.1" x2="797.4" y2="124.9" stroke-width="0.75"></line><line x1="797.6" y1="118.6" x2="800.1" y2="123.5" stroke-width="0.75"></line><line x1="800.5" y1="117.2" x2="802.8" y2="122.2" stroke-width="0.75"></line><line x1="803.5" y1="115.9" x2="808.4" y2="127.9" stroke-width="1.4"></line><line x1="806.5" y1="114.7" x2="808.4" y2="119.9" stroke-width="0.75"></line><line x1="809.5" y1="113.6" x2="811.2" y2="118.9" stroke-width="0.75"></line><line x1="812.6" y1="112.7" x2="814.1" y2="118.0" stroke-width="0.75"></line><line x1="815.8" y1="111.9" x2="817.0" y2="117.2" stroke-width="0.75"></line><line x1="818.9" y1="111.2" x2="820.7" y2="120.0" stroke-width="0.75"></line><line x1="822.1" y1="110.6" x2="823.0" y2="116.0" stroke-width="0.75"></line><line x1="825.3" y1="110.2" x2="826.0" y2="115.6" stroke-width="0.75"></line><line x1="828.5" y1="109.9" x2="829.0" y2="115.3" stroke-width="0.75"></line><line x1="831.8" y1="109.7" x2="832.0" y2="115.2" stroke-width="0.75"></line><line x1="835.0" y1="109.6" x2="835.0" y2="122.6" stroke-width="1.4"></line><line x1="838.2" y1="109.7" x2="838.0" y2="115.2" stroke-width="0.75"></line><line x1="841.5" y1="109.9" x2="841.0" y2="115.3" stroke-width="0.75"></line><line x1="844.7" y1="110.2" x2="844.0" y2="115.6" stroke-width="0.75"></line><line x1="847.9" y1="110.6" x2="847.0" y2="116.0" stroke-width="0.75"></line><line x1="851.1" y1="111.2" x2="849.3" y2="120.0" stroke-width="0.75"></line><line x1="854.2" y1="111.9" x2="853.0" y2="117.2" stroke-width="0.75"></line><line x1="857.4" y1="112.7" x2="855.9" y2="118.0" stroke-width="0.75"></line><line x1="860.5" y1="113.6" x2="858.8" y2="118.9" stroke-width="0.75"></line><line x1="863.5" y1="114.7" x2="861.6" y2="119.9" stroke-width="0.75"></line><line x1="866.5" y1="115.9" x2="861.6" y2="127.9" stroke-width="1.4"></line><line x1="869.5" y1="117.2" x2="867.2" y2="122.2" stroke-width="0.75"></line><line x1="872.4" y1="118.6" x2="869.9" y2="123.5" stroke-width="0.75"></line><line x1="875.3" y1="120.1" x2="872.6" y2="124.9" stroke-width="0.75"></line><line x1="878.1" y1="121.7" x2="875.2" y2="126.4" stroke-width="0.75"></line><line x1="880.8" y1="123.5" x2="875.8" y2="131.0" stroke-width="0.75"></line><line x1="883.4" y1="125.3" x2="880.2" y2="129.8" stroke-width="0.75"></line><line x1="886.0" y1="127.3" x2="882.6" y2="131.6" stroke-width="0.75"></line><line x1="888.5" y1="129.3" x2="884.9" y2="133.5" stroke-width="0.75"></line><line x1="890.9" y1="131.5" x2="887.2" y2="135.5" stroke-width="0.75"></line><line x1="893.3" y1="133.7" x2="884.1" y2="142.9" stroke-width="1.4"></line></g><text x="766.8" y="127.8" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">0</text><text x="798.1" y="106.9" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">0,5</text><text x="835.0" y="99.6" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">1</text><text x="871.9" y="106.9" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">1,5</text><text x="903.2" y="127.8" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">2</text><text x="835" y="157.392" text-anchor="middle" style="font:700 19px var(--font-ui);fill:#1A1A1A">А</text><text x="750" y="186" style="font:600 10px var(--font-num);fill:#333">1,5</text><g id="nA" transform="rotate(-45.000 835 200)"><line x1="835" y1="198" x2="835" y2="108.6" stroke="#B42318" stroke-width="1.5"></line></g><circle cx="835" cy="192" r="6" fill="#23272C"></circle></g><text x="615" y="240" text-anchor="middle" class="eng">НАПРЯЖЕНИЕ</text><text x="835" y="240" text-anchor="middle" class="eng">ТОК</text><g id="rPow" class="rock" tabindex="0" role="switch" aria-label="Тумблер сеть" aria-checked="false" style="cursor:pointer">
+    <rect x="904" y="238" width="52" height="74" rx="8" fill="#14171A" stroke="#4A515A"></rect>
+    <rect x="911" y="245" width="38" height="60" rx="6" fill="url(#gRock)" stroke="#0B0C0E"></rect>
+    <text x="930" y="265" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#C9CED6">I</text>
+    <text x="930" y="297" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#C9CED6">O</text>
+    <rect class="shade" x="911" y="245" width="38" height="30" rx="6" fill="#000" opacity=".38"></rect></g><circle id="vd1" cx="864" cy="270" r="8" fill="#2E1A0E" stroke="#0E0F11"></circle><text x="864" y="296" text-anchor="middle" class="eng sm">VD1</text><text x="520" y="290" class="eng">СЕТЬ</text><path d="M566,286 H846" stroke="#4A515A" stroke-dasharray="3 4"></path><rect x="492" y="332" width="488" height="314" rx="14" fill="url(#gPanel)" stroke="#121417"></rect><text x="512" y="356" class="eng sm" style="letter-spacing:.08em">КОНТРОЛЛЕР ВРЕМЕНИ</text><rect x="512" y="368" width="250" height="84" rx="9" fill="url(#gBezel)"></rect><rect x="526" y="380" width="222" height="56" rx="4" fill="#120706"></rect><text id="timDisp" x="716" y="423" text-anchor="end" class="led"></text><text x="724" y="430" style="font:600 13px var(--font-ui);fill:#FF7A66">с</text><g id="bStart" class="hit" tabindex="0"><circle cx="572" cy="500" r="24" fill="#14171A"></circle><circle cx="572" cy="500" r="18" fill="url(#gBtn)" stroke="#5A616A"></circle></g><text x="572" y="544" text-anchor="middle" class="eng sm" style="font-size:11px">ПУСК / СТОП</text><g id="bReset" class="hit" tabindex="0"><circle cx="672" cy="500" r="24" fill="#14171A"></circle><circle cx="672" cy="500" r="18" fill="#7A2318" stroke="#3A0F0A"></circle></g><text x="672" y="544" text-anchor="middle" class="eng sm" style="font-size:11px">СБРОС</text><line x1="782" y1="360" x2="782" y2="626" stroke="#4A515A" stroke-dasharray="3 4"></line><text x="880" y="356" text-anchor="middle" class="eng sm" style="letter-spacing:.08em">НАГРЕВ</text><g id="kReg" class="knob" tabindex="0" role="slider" aria-label="Регулятор мощности нагрева" aria-valuemin="0" aria-valuemax="100" style="cursor:ns-resize"><circle cx="880" cy="432" r="60" fill="transparent"></circle><line x1="850.3" y1="461.7" x2="846.1" y2="465.9" stroke="#C9CED6" stroke-width="1.4"></line><text x="839.7" y="476.3" text-anchor="middle" class="eng sm">0</text><line x1="844.2" y1="453.9" x2="841.6" y2="455.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="840.1" y1="445.0" x2="834.3" y2="446.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="838.1" y1="435.3" x2="835.1" y2="435.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="838.5" y1="425.4" x2="832.6" y2="424.5" stroke="#C9CED6" stroke-width="1.4"></line><text x="823.7" y="427.1" text-anchor="middle" class="eng sm">2</text><line x1="841.2" y1="415.9" x2="838.4" y2="414.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="846.0" y1="407.3" x2="841.2" y2="403.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="852.7" y1="400.1" x2="850.8" y2="397.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="860.9" y1="394.6" x2="858.2" y2="389.2" stroke="#C9CED6" stroke-width="1.4"></line><text x="854.1" y="385.2" text-anchor="middle" class="eng sm">4</text><line x1="870.2" y1="391.2" x2="869.5" y2="388.2" stroke="#C9CED6" stroke-width="0.8"></line><line x1="880.0" y1="390.0" x2="880.0" y2="384.0" stroke="#C9CED6" stroke-width="1.4"></line><line x1="889.8" y1="391.2" x2="890.5" y2="388.2" stroke="#C9CED6" stroke-width="0.8"></line><line x1="899.1" y1="394.6" x2="901.8" y2="389.2" stroke="#C9CED6" stroke-width="1.4"></line><text x="905.9" y="385.2" text-anchor="middle" class="eng sm">6</text><line x1="907.3" y1="400.1" x2="909.2" y2="397.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="914.0" y1="407.3" x2="918.8" y2="403.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="918.8" y1="415.9" x2="921.6" y2="414.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="921.5" y1="425.4" x2="927.4" y2="424.5" stroke="#C9CED6" stroke-width="1.4"></line><text x="936.3" y="427.1" text-anchor="middle" class="eng sm">8</text><line x1="921.9" y1="435.3" x2="924.9" y2="435.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="919.9" y1="445.0" x2="925.7" y2="446.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="915.8" y1="453.9" x2="918.4" y2="455.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="909.7" y1="461.7" x2="913.9" y2="465.9" stroke="#C9CED6" stroke-width="1.4"></line><text x="920.3" y="476.3" text-anchor="middle" class="eng sm">10</text><circle cx="880" cy="432" r="36" fill="#15181C"></circle><g class="rot" transform="rotate(9.28 880 432)"><circle cx="880" cy="432" r="34" fill="url(#gKnob)" stroke="#07080A"></circle><line x1="880.0" y1="398.0" x2="880.0" y2="402.0" stroke="#454B53" stroke-width="1.3"></line><line x1="887.1" y1="398.7" x2="886.2" y2="402.7" stroke="#454B53" stroke-width="1.3"></line><line x1="893.8" y1="400.9" x2="892.2" y2="404.6" stroke="#454B53" stroke-width="1.3"></line><line x1="900.0" y1="404.5" x2="897.6" y2="407.7" stroke="#454B53" stroke-width="1.3"></line><line x1="905.3" y1="409.2" x2="902.3" y2="411.9" stroke="#454B53" stroke-width="1.3"></line><line x1="909.4" y1="415.0" x2="906.0" y2="417.0" stroke="#454B53" stroke-width="1.3"></line><line x1="912.3" y1="421.5" x2="908.5" y2="422.7" stroke="#454B53" stroke-width="1.3"></line><line x1="913.8" y1="428.4" x2="909.8" y2="428.9" stroke="#454B53" stroke-width="1.3"></line><line x1="913.8" y1="435.6" x2="909.8" y2="435.1" stroke="#454B53" stroke-width="1.3"></line><line x1="912.3" y1="442.5" x2="908.5" y2="441.3" stroke="#454B53" stroke-width="1.3"></line><line x1="909.4" y1="449.0" x2="906.0" y2="447.0" stroke="#454B53" stroke-width="1.3"></line><line x1="905.3" y1="454.8" x2="902.3" y2="452.1" stroke="#454B53" stroke-width="1.3"></line><line x1="900.0" y1="459.5" x2="897.6" y2="456.3" stroke="#454B53" stroke-width="1.3"></line><line x1="893.8" y1="463.1" x2="892.2" y2="459.4" stroke="#454B53" stroke-width="1.3"></line><line x1="887.1" y1="465.3" x2="886.2" y2="461.3" stroke="#454B53" stroke-width="1.3"></line><line x1="880.0" y1="466.0" x2="880.0" y2="462.0" stroke="#454B53" stroke-width="1.3"></line><line x1="872.9" y1="465.3" x2="873.8" y2="461.3" stroke="#454B53" stroke-width="1.3"></line><line x1="866.2" y1="463.1" x2="867.8" y2="459.4" stroke="#454B53" stroke-width="1.3"></line><line x1="860.0" y1="459.5" x2="862.4" y2="456.3" stroke="#454B53" stroke-width="1.3"></line><line x1="854.7" y1="454.8" x2="857.7" y2="452.1" stroke="#454B53" stroke-width="1.3"></line><line x1="850.6" y1="449.0" x2="854.0" y2="447.0" stroke="#454B53" stroke-width="1.3"></line><line x1="847.7" y1="442.5" x2="851.5" y2="441.3" stroke="#454B53" stroke-width="1.3"></line><line x1="846.2" y1="435.6" x2="850.2" y2="435.1" stroke="#454B53" stroke-width="1.3"></line><line x1="846.2" y1="428.4" x2="850.2" y2="428.9" stroke="#454B53" stroke-width="1.3"></line><line x1="847.7" y1="421.5" x2="851.5" y2="422.7" stroke="#454B53" stroke-width="1.3"></line><line x1="850.6" y1="415.0" x2="854.0" y2="417.0" stroke="#454B53" stroke-width="1.3"></line><line x1="854.7" y1="409.2" x2="857.7" y2="411.9" stroke="#454B53" stroke-width="1.3"></line><line x1="860.0" y1="404.5" x2="862.4" y2="407.7" stroke="#454B53" stroke-width="1.3"></line><line x1="866.2" y1="400.9" x2="867.8" y2="404.6" stroke="#454B53" stroke-width="1.3"></line><line x1="872.9" y1="398.7" x2="873.8" y2="402.7" stroke="#454B53" stroke-width="1.3"></line><circle cx="880" cy="432" r="24" fill="url(#gKnobCap)"></circle><circle cx="880" cy="409" r="3.2" fill="#F4F6F8"></circle></g></g><text x="880" y="512" text-anchor="middle" class="eng sm" style="font-size:11px">регулятор</text><g id="rHeat" class="rock" tabindex="0" role="switch" aria-label="Тумблер нагрев вкл" aria-checked="false" style="cursor:pointer">
+    <rect x="854" y="530" width="52" height="74" rx="8" fill="#14171A" stroke="#4A515A"></rect>
+    <rect x="861" y="537" width="38" height="60" rx="6" fill="url(#gRock)" stroke="#0B0C0E"></rect>
+    <text x="880" y="557" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#C9CED6">I</text>
+    <text x="880" y="589" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#C9CED6">O</text>
+    <rect class="shade" x="861" y="537" width="38" height="30" rx="6" fill="#000" opacity=".38"></rect></g><text x="830" y="572" text-anchor="end" class="eng sm" style="font-size:11px">ВКЛ</text><circle id="vd3" cx="944" cy="567" r="8" fill="#2E1A0E" stroke="#0E0F11"></circle><text x="944" y="592" text-anchor="middle" class="eng sm">VD3</text><rect x="512" y="580" width="250" height="44" rx="6" fill="#30343A"></rect><text x="637" y="608" text-anchor="middle" style="font:700 15px var(--font-ui);fill:#C9CED6;letter-spacing:.12em">ФПТ1-8</text></svg>
+      </div>
+      <div class="controls">
+        <div class="ctl mob"><button class="btn small" id="fitBtn" aria-pressed="false">Вписать в экран</button><span class="note-chip rot-hint">Поверните телефон горизонтально, так установка видна целиком</span><span class="note-chip">Ручки крутятся движением пальца вверх и вниз прямо по ручке</span></div>
+        <div class="ctl">
+          <button class="btn small" id="plugBtn" aria-pressed="false">Вилка в розетку 220 В</button>
+          <button class="btn small" id="coolBtn" title="Мгновенно остудить калориметр и образцы до температуры лаборатории">Сбросить температуру</button>
+        </div>
+        <div class="ctl">
+          <span class="lbl">Время</span>
+          <div class="seg" id="speedSeg" role="group" aria-label="Скорость времени">
+            <button data-speed="1" aria-pressed="true">×1</button>
+            <button data-speed="10" aria-pressed="false">×10</button>
+            <button data-speed="60" aria-pressed="false">×60</button>
+          </div>
+        </div>
+        <span class="note-chip">Крышка, образцы, экран и кнопки нажимаются мышкой. Регулятор крутится перетаскиванием вверх и вниз или колёсиком, с Shift точнее</span>
+      </div>
+    </div>
+
+    <aside class="col">
+      <div class="panel">
+        <h3>Журнал отсчётов</h3>
+        <label class="field">Опыт<select id="recM"><option value="0">пустой калориметр</option><option value="st">сталь</option><option value="al">алюминий</option><option value="br">латунь</option></select></label>
+        <div class="rec-grid" style="margin-top:8px">
+          <label class="field"><span>t<sub>нач</sub>, °C</span><input id="recT0" inputmode="decimal"></label>
+          <label class="field"><span>t<sub>кон</sub>, °C</span><input id="recT1" inputmode="decimal"></label>
+          <label class="field">τ, с<input id="recTau" inputmode="decimal"></label>
+          <label class="field">U, В<input id="recU" inputmode="decimal"></label>
+          <label class="field">I, А<input id="recI" inputmode="decimal"></label>
+          <button class="btn primary" id="recBtn" style="justify-content:center;align-self:end;padding-inline:6px">Записать</button>
+        </div>
+        <table class="jr">
+          <thead><tr><th>Опыт</th><th>t<sub>нач</sub></th><th>t<sub>кон</sub></th><th>τ, с</th><th>U</th><th>I</th><th></th></tr></thead>
+          <tbody id="jrBody"></tbody>
+        </table>
+        <div class="empty" id="jrEmpty">Пока пусто. После каждого нагрева впишите показания приборов</div>
+      </div>
+      <div class="panel">
+        <h3>Образцы</h3>
+        <dl class="kv" id="smpList"></dl>
+        <p class="tiny muted" style="margin:10px 0 0">Масса выбита на торце каждого образца</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ РАСЧЁТ ============ -->
+<section class="view" id="v-calc" hidden>
+  <div class="calc">
+    <div class="col">
+      <div class="panel">
+        <h2>Таблица результатов</h2>
+        <div class="tblwrap">
+          <table class="lab" style="min-width:720px">
+            <thead><tr><th>Материал<br>образца</th><th>Масса<br>образца<br>m, кг</th><th>Разность<br>температур<br>Δt, °C</th><th>τ<sub>1</sub>, с</th><th>τ<sub>2</sub>, с</th><th>I, А</th><th>U, В</th><th>c,<br>Дж/(кг К)</th></tr></thead>
+            <tbody id="tBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Сравнение с законом Дюлонга и Пти</h2>
+        <div class="tblwrap">
+          <table class="lab" style="min-width:560px">
+            <thead><tr><th>Материал</th><th>μ, кг/моль</th><th>c<sub>ДП</sub> = 3R/μ,<br>Дж/(кг К)</th><th>c<sub>опыт</sub>,<br>Дж/(кг К)</th><th>δ, %</th></tr></thead>
+            <tbody id="dpBody"></tbody>
+          </table>
+        </div>
+        <p class="tiny muted" style="margin:10px 0 0">Сталь считаем железом, латунь Л63 сплавом 63% меди и 37% цинка, отсюда её средняя молярная масса</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <h2>Расчётные формулы</h2>
+        <div class="formula" id="fBox"></div>
+      </div>
+      <div class="panel">
+        <h2>Вывод</h2>
+        <textarea class="conc" id="conc" placeholder="Сравните опытные значения с рассчитанными по закону Дюлонга и Пти и сделайте выводы"></textarea>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ТЕОРИЯ ============ -->
+<section class="view" id="v-theory" hidden>
+  <div class="theory">
+    <div class="panel prose">
+      <h2>Краткая теория теплоёмкости</h2>
+      <p><b>Удельной теплоёмкостью</b> вещества называется величина, равная количеству теплоты, необходимому для нагревания 1 кг вещества на 1 К, единица Дж/(кг К). <b>Молярная теплоёмкость</b> относится к 1 моль вещества, единица Дж/(моль К):</p>
+      <p style="text-align:center"><math display="block"><mi>c</mi><mo>=</mo><mfrac><mrow><mi>δ</mi><mi>Q</mi></mrow><mrow><mi>m</mi><mi>d</mi><mi>T</mi></mrow></mfrac><mspace width="1em"/><mtext>(1)</mtext><mspace width="2em"/><msub><mi>C</mi><mi>μ</mi></msub><mo>=</mo><mfrac><mrow><mi>δ</mi><mi>Q</mi></mrow><mrow><mi>ν</mi><mi>d</mi><mi>T</mi></mrow></mfrac><mo>,</mo><mspace width="0.5em"/><mi>ν</mi><mo>=</mo><mfrac><mi>m</mi><mi>μ</mi></mfrac><mspace width="1em"/><mtext>(2)</mtext></math></p>
+      <p>Связь между ними: C<sub>μ</sub> = cμ (3), где μ молярная масса.</p>
+      <h3>Теплоёмкость газов</h3>
+      <p>При нагревании при постоянном объёме работа внешних сил равна нулю, и всё тепло идёт на увеличение внутренней энергии. Внутренняя энергия моля идеального газа U<sub>μ</sub> = (i/2)RT, поэтому</p>
+      <p style="text-align:center"><math display="block"><msub><mi>C</mi><mi>V</mi></msub><mo>=</mo><mfrac><mi>i</mi><mn>2</mn></mfrac><mi>R</mi><mspace width="1em"/><mtext>(8)</mtext><mspace width="2em"/><msub><mi>C</mi><mi>p</mi></msub><mo>=</mo><msub><mi>C</mi><mi>V</mi></msub><mo>+</mo><mi>R</mi><mo>=</mo><mfrac><mrow><mi>i</mi><mo>+</mo><mn>2</mn></mrow><mn>2</mn></mfrac><mi>R</mi><mspace width="1em"/><mtext>(9, 10)</mtext></math></p>
+      <p>где i число степеней свободы молекулы. Соотношение C<sub>p</sub> = C<sub>V</sub> + R называется уравнением Майера: при постоянном давлении часть тепла уходит на работу расширения газа. Одноатомная молекула имеет 3 степени свободы поступательного движения, жёсткая двухатомная ещё 2 вращательные, жёсткая трёх- и более атомная 3 поступательные и 3 вращательные. На каждую степень свободы в среднем приходится энергия kT/2, а на колебательную вдвое больше, kT, так как колебание обладает и кинетической, и потенциальной энергией.</p>
+      <h3>Теплоёмкость твёрдых тел</h3>
+      <p>В кристалле частицы колеблются около узлов решётки по трём взаимно перпендикулярным направлениям, это три колебательные степени свободы со средней энергией kT каждая (11). Внутренняя энергия моля U<sub>μ</sub> = 3N<sub>A</sub>kT = 3RT, и</p>
+      <p style="text-align:center"><math display="block"><msub><mi>C</mi><mi>V</mi></msub><mo>=</mo><mfrac><mrow><mi>d</mi><msub><mi>U</mi><mi>μ</mi></msub></mrow><mrow><mi>d</mi><mi>T</mi></mrow></mfrac><mo>=</mo><mn>3</mn><mi>R</mi><mo>≈</mo><mn>25</mn><mspace width="0.3em"/><mtext>Дж/(моль К)</mtext><mspace width="1em"/><mtext>(12)</mtext></math></p>
+      <p>Это <b>закон Дюлонга и Пти</b>: молярная теплоёмкость химически простых тел в кристаллическом состоянии одинакова и не зависит от температуры. Для химического соединения из n атомов C<sub>V</sub> = 3nR ≈ 25n Дж/(моль К).</p>
+      <table>
+        <thead><tr><th>Вещество</th><th>Теория, Дж/(моль К)</th><th>Опыт, Дж/(моль К)</th></tr></thead>
+        <tbody>
+          <tr><td>Алюминий Al</td><td>25</td><td>25,5</td></tr><tr><td>Алмаз C</td><td>25</td><td>5,9</td></tr><tr><td>Бериллий Be</td><td>25</td><td>15,6</td></tr>
+          <tr><td>Бор B</td><td>25</td><td>13,5</td></tr><tr><td>Железо Fe</td><td>25</td><td>26,8</td></tr><tr><td>Серебро Ag</td><td>25</td><td>25,6</td></tr>
+          <tr><td>NaCl</td><td>50</td><td>50,6</td></tr><tr><td>AgCl</td><td>50</td><td>50,9</td></tr><tr><td>CaCl<sub>2</sub></td><td>75</td><td>76,2</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel prose">
+      <p style="margin-top:0">У некоторых веществ (C, Be, B) теплоёмкость заметно меньше, а при низких температурах она падает у всех: вблизи 0 К теплоёмкость пропорциональна T<sup>3</sup>, и закон выполняется только при достаточно высоких температурах. Алмаз достигает 3R лишь около 1800 К. Расхождение объясняет квантовая теория теплоёмкости.</p>
+      <figure>
+        <svg viewBox="0 0 460 210" style="width:100%;height:auto" aria-label="Зависимость теплоёмкости твёрдого тела от температуры">
+          <line x1="50" y1="180" x2="440" y2="180" stroke="#3A342E"/><line x1="50" y1="180" x2="50" y2="14" stroke="#3A342E"/>
+          <line x1="50" y1="52" x2="440" y2="52" stroke="#B9B2A8" stroke-dasharray="5 4"/>
+          <path id="debye" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+          <g font-family="Manrope" font-size="12.5" fill="#3A342E">
+            <text x="26" y="56">3R</text><text x="30" y="24" font-style="italic">C</text><text x="428" y="200" font-style="italic">T, К</text>
+            <text x="164" y="198" text-anchor="middle">200</text><text x="278" y="198" text-anchor="middle">400</text><text x="392" y="198" text-anchor="middle">600</text><text x="50" y="198" text-anchor="middle">0</text>
+          </g>
+        </svg>
+        <figcaption>Рис. 1. Теплоёмкость твёрдого тела при низких температурах</figcaption>
+      </figure>
+      <h3>Принцип измерения</h3>
+      <p>Удельная теплоёмкость образца</p>
+      <p style="text-align:center"><math display="block"><mi>c</mi><mo>=</mo><mfrac><mi>Q</mi><mrow><mi>m</mi><mi>Δ</mi><mi>t</mi></mrow></mfrac><mspace width="1em"/><mtext>(13)</mtext></math></p>
+      <p>где Q количество теплоты, сообщённое образцу при нагревании, m масса образца, Δt разность конечной и начальной температур. Если для нагрева пустого калориметра на Δt требуется Q<sub>1</sub> джоулей, а для нагрева калориметра с образцом на те же Δt требуется Q<sub>2</sub>, то на сам образец идёт разность:</p>
+      <p style="text-align:center"><math display="block"><mi>c</mi><mo>=</mo><mfrac><mrow><msub><mi>Q</mi><mn>2</mn></msub><mo>−</mo><msub><mi>Q</mi><mn>1</mn></msub></mrow><mrow><mi>m</mi><mi>Δ</mi><mi>t</mi></mrow></mfrac><mspace width="1em"/><mtext>(14)</mtext></math></p>
+      <p>В установке ФПТ1-8 калориметр нагревается током, проходящим через спираль нагревателя, и количество теплоты Q = IUτ (15), где I сила тока, U напряжение на нагревателе, τ время нагрева. Если мощность нагревателя в обоих опытах одинакова, то после подстановки (15) в (14)</p>
+      <p style="text-align:center"><math display="block"><mi>c</mi><mo>=</mo><mfrac><mrow><mi>I</mi><mi>U</mi><mo>(</mo><msub><mi>τ</mi><mn>2</mn></msub><mo>−</mo><msub><mi>τ</mi><mn>1</mn></msub><mo>)</mo></mrow><mrow><mi>m</mi><mi>Δ</mi><mi>t</mi></mrow></mfrac><mspace width="1em"/><mtext>(16)</mtext></math></p>
+      <p>где τ<sub>1</sub> время нагрева пустого калориметра, τ<sub>2</sub> время нагрева калориметра с образцом.</p>
+      <h3>Установка ФПТ1-8</h3>
+      <p>Установка состоит из приборного блока БП-8 (цифровой контроллер времени, амперметр, вольтметр, узлы «нагрев» и «сеть»), блока рабочего элемента РЭ-8 и стойки. В РЭ-8 находится нагреватель: металлический кожух, теплоизоляция, калориметр с намотанной спиралью и ручка выталкивания образца. В калориметр вмонтирован датчик цифрового контроллера температуры. Внизу размещены образцы и рукоятка для их установки в нагреватель, спереди блок закрыт экраном из оргстекла.</p>
+      <h3>Контрольные вопросы</h3>
+      <ol class="qlist">
+        <li>Дайте определение внутренней энергии термодинамической системы.</li>
+        <li>В результате каких процессов может изменяться внутренняя энергия системы?</li>
+        <li>Что такое удельная теплоёмкость вещества? Молярная теплоёмкость вещества? Какая связь между ними?</li>
+        <li>Чем отличается молярная теплоёмкость газа при изохорном процессе (C<sub>V</sub>) и при изобарном процессе (C<sub>p</sub>)? Дайте объяснение.</li>
+        <li>Выразите молярную теплоёмкость при изохорном процессе (C<sub>V</sub>) и при изобарном процессе (C<sub>p</sub>) через число степеней свободы молекул.</li>
+        <li>Сколько степеней свободы могут иметь одноатомный газ, двухатомный и многоатомные газы? Какие степени свободы могут иметь эти газы?</li>
+        <li>Имеется ли различие между C<sub>V</sub> и C<sub>p</sub> твёрдых тел?</li>
+        <li>Какими степенями свободы молекул определяется молярная теплоёмкость твёрдых тел? Сформулируйте закон Дюлонга и Пти.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+try { const nj = document.getElementById('nojs'); if (nj) nj.remove(); } catch (e) {}
+
+/* ---------- утилиты ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const fmt = (x, d) => (x == null || !isFinite(x)) ? '' : x.toFixed(d).replace('.', ',').replace(/^-/, '−');
+const num = s => {
+  if (s == null) return NaN;
+  const t = String(s).trim().replace(/\s/g, '').replace(',', '.').replace('−', '-');
+  return t === '' ? NaN : Number(t);
+};
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rnd = (a, b) => a + Math.random() * (b - a);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let toastTimer = 0;
+function toast(msg, ms = 3600) {
+  const el = $('#toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+const polar = (cx, cy, r, aDeg) => { const a = aDeg * Math.PI / 180; return [cx + r * Math.sin(a), cy - r * Math.cos(a)]; };
+function gauss() { let u = 0; while (!u) u = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random()); }
+
+/* ---------- образцы и скрытые параметры ---------- */
+const MAT = {
+  st: { name: 'сталь', Name: 'Сталь', m: 0.0987, c: 462, mu: '0,056', fill: '#8D959D', hi: '#C5CBD1' },
+  al: { name: 'алюминий', Name: 'Алюминий', m: 0.0339, c: 897, mu: '0,027', fill: '#BFC5CC', hi: '#EEF1F4' },
+  br: { name: 'латунь', Name: 'Латунь', m: 0.1068, c: 383, mu: '0,064', fill: '#C29A3C', hi: '#EED48A' }
+};
+const ORDER = ['st', 'al', 'br'];
+const KEY = 'fizlab9-teplo-v1';
+const saved = store.get(KEY) || {};
+const hidden = saved.hidden || {
+  room: rnd(21.8, 23.4),            // температура в лаборатории, °C
+  Ck: 150 * (1 + rnd(-0.08, 0.08)), // теплоёмкость калориметра со спиралью, Дж/К
+  Rh: 14.8 * (1 + rnd(-0.03, 0.03)),// сопротивление спирали, Ом
+  Gl: 0.05 * (1 + rnd(-0.2, 0.2)),  // теплопотери через изоляцию, Вт/К
+  Gs: 4.0 * (1 + rnd(-0.15, 0.15)), // тепловой контакт образца со стенкой, Вт/К
+  gV: rnd(-0.012, 0.012), gA: rnd(-0.012, 0.012), toff: rnd(-0.3, 0.3),
+  cdev: { st: rnd(-0.02, 0.02), al: rnd(-0.015, 0.015), br: rnd(-0.02, 0.02) }
+};
+const cTrue = k => MAT[k].c * (1 + hidden.cdev[k]);
+const emptyRows = () => ORDER.map(() => ({ m: '', dt: '', t1: '', t2: '', I: '', U: '', c: '' }));
+const data = Object.assign({ journal: [], rows: emptyRows(), dp: ORDER.map(() => ({ cdp: '', c: '', d: '' })), conc: '' }, saved.data || {});
+const flags = { minFirst: false, screen: false, placed: false, plug: false, power: false, emptyClosed: false, heatSet: false, sync: false, emptyRun: false, emptyEnd: false, inserted: false, sampleRun: false };   // отметки работы со стендом живут только в этом заходе
+function save() { store.set(KEY, { hidden, data }); }
+
+/* ---------- состояние установки ---------- */
+const st = {
+  plug: false, power: false, heatOn: false, reg: rnd(0.25, 0.55),
+  screen: !flags.screen, placed: flags.placed, lid: false, inCal: null, insertT: -1e9, lidT: -1e9,
+  Tk: hidden.room, Tsens: hidden.room, Ts: { st: hidden.room, al: hidden.room, br: hidden.room },
+  t: 0, U: 0, I: 0,
+  meters: { V: { a: 0, v: 0 }, A: { a: 0, v: 0 } },
+  timer: { run: false, t0: 0, el: 0 },
+  run: null, heatOnT: -1e9, timerStartT: -1e9, heatOnReal: -1e9, timerReal: -1e9, maxT: 0
+};
+let speed = 1;
+
+/* ---------- построение установки (SVG) ---------- */
+const MSPAN = 45;
+function meterSVG(id, x, y, w, h, max, div, major, labels, unit, cls) {
+  const px = x + w / 2, py = y + h - 26, R = w * 0.40;
+  let s = `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9" fill="url(#gBezel)"/>`;
+  s += `<rect x="${x + 10}" y="${y + 10}" width="${w - 20}" height="${h - 34}" rx="4" fill="url(#gFace)"/>`;
+  let t = '';
+  for (let k = 0; k <= div; k++) {
+    const a = -MSPAN + 2 * MSPAN * k / div, len = k % major === 0 ? 13 : k % (major / 2) === 0 ? 9 : 5.5;
+    const [x0, y0] = polar(px, py, R, a), [x1, y1] = polar(px, py, R - len, a);
+    t += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke-width="${k % major === 0 ? 1.4 : .75}"/>`;
+  }
+  s += `<g stroke="#1A1A1A">${t}</g>`;
+  for (const v of labels) { const [lx, ly] = polar(px, py, R + 14, -MSPAN + 2 * MSPAN * v / max); s += `<text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">${String(v).replace('.', ',')}</text>`; }
+  s += `<text x="${px}" y="${py - R * 0.42}" text-anchor="middle" style="font:700 19px var(--font-ui);fill:#1A1A1A">${unit}</text>`;
+  s += `<text x="${x + 18}" y="${y + h - 32}" style="font:600 10px var(--font-num);fill:#333">${cls}</text>`;
+  s += `<g id="${id}" transform="rotate(${-MSPAN} ${px} ${py})"><line x1="${px}" y1="${py + 6}" x2="${px}" y2="${py - R - 1}" stroke="#B42318" stroke-width="1.5"/></g>`;
+  s += `<circle cx="${px}" cy="${py}" r="6" fill="#23272C"/></g>`;
+  return s;
+}
+function rockerSVG(id, x, y, label) {
+  return `<g id="${id}" class="rock" tabindex="0" role="switch" aria-label="${label}" aria-checked="false" style="cursor:pointer">
+    <rect x="${x}" y="${y}" width="52" height="74" rx="8" fill="#14171A" stroke="#4A515A"/>
+    <rect x="${x + 7}" y="${y + 7}" width="38" height="60" rx="6" fill="url(#gRock)" stroke="#0B0C0E"/>
+    <text x="${x + 26}" y="${y + 27}" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#C9CED6">I</text>
+    <text x="${x + 26}" y="${y + 59}" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#C9CED6">O</text>
+    <rect class="shade" x="${x + 7}" y="${y + 7}" width="38" height="30" rx="6" fill="#000" opacity=".38"/></g>`;
+}
+function knobSVG(id, cx, cy, label, r = 34) {
+  let s = `<g id="${id}" class="knob" tabindex="0" role="slider" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" style="cursor:ns-resize">`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${r + 26}" fill="transparent"/>`;
+  for (let k = 0; k <= 20; k++) {
+    const a = -135 + 270 * k / 20;
+    const [x0, y0] = polar(cx, cy, r + 8, a), [x1, y1] = polar(cx, cy, r + (k % 2 ? 11 : 14), a);
+    s += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="#C9CED6" stroke-width="${k % 2 ? .8 : 1.4}"/>`;
+    if (k % 4 === 0) { const [tx, ty] = polar(cx, cy, r + 23, a); s += `<text x="${tx.toFixed(1)}" y="${(ty + 4).toFixed(1)}" text-anchor="middle" class="eng sm">${k / 2}</text>`; }
+  }
+  s += `<circle cx="${cx}" cy="${cy}" r="${r + 2}" fill="#15181C"/><g class="rot" transform="rotate(-135 ${cx} ${cy})">`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gKnob)" stroke="#07080A"/>`;
+  for (let k = 0; k < 30; k++) { const [x0, y0] = polar(cx, cy, r, k * 12), [x1, y1] = polar(cx, cy, r - 4, k * 12); s += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="#454B53" stroke-width="1.3"/>`; }
+  s += `<circle cx="${cx}" cy="${cy}" r="${r - 10}" fill="url(#gKnobCap)"/><circle cx="${cx}" cy="${cy - r + 11}" r="3.2" fill="#F4F6F8"/></g></g>`;
+  return s;
+}
+const SHELF = { st: 120, al: 210, br: 300 };
+function sampleShape(k, x, yb, h = 92, w = 46) {
+  const M = MAT[k];
+  return `<rect x="${x - w / 2}" y="${yb - h}" width="${w}" height="${h}" rx="3" fill="url(#gS_${k})" stroke="rgba(0,0,0,.35)"/>
+    <ellipse cx="${x}" cy="${yb - h}" rx="${w / 2}" ry="5" fill="${M.hi}" stroke="rgba(0,0,0,.3)"/>`;
+}
+function buildStand() {
+  let s = `<defs>
+    <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ECEAE6"/><stop offset="1" stop-color="#D3CFC8"/></linearGradient>
+    <linearGradient id="gPanel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B3F45"/><stop offset="1" stop-color="#26292E"/></linearGradient>
+    <linearGradient id="gBezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#30353C"/><stop offset="1" stop-color="#16191D"/></linearGradient>
+    <linearGradient id="gFace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFBF6"/><stop offset="1" stop-color="#ECE8DB"/></linearGradient>
+    <linearGradient id="gCase" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7E868E"/><stop offset=".3" stop-color="#C9CFD5"/><stop offset=".7" stop-color="#A8AFB7"/><stop offset="1" stop-color="#6F777F"/></linearGradient>
+    <linearGradient id="gCup" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9C5A2A"/><stop offset=".45" stop-color="#E0A06A"/><stop offset="1" stop-color="#8A4C22"/></linearGradient>
+    <linearGradient id="gLid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D5DADF"/><stop offset="1" stop-color="#8C949C"/></linearGradient>
+    <pattern id="wool" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#E9DDBE"/><path d="M0,6 Q2,2 4,5 T8,3" fill="none" stroke="#CDBB8E" stroke-width="1"/></pattern>
+    <radialGradient id="gKnob" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#5A6069"/><stop offset=".6" stop-color="#1E2227"/><stop offset="1" stop-color="#0C0E10"/></radialGradient>
+    <radialGradient id="gKnobCap" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#8E959E"/><stop offset="1" stop-color="#3A4048"/></radialGradient>
+    <linearGradient id="gRock" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C535C"/><stop offset="1" stop-color="#1B1E22"/></linearGradient>
+    <radialGradient id="gBtn" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#E9EDF0"/><stop offset="1" stop-color="#8E969E"/></radialGradient>
+    <linearGradient id="gGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".55"/><stop offset=".4" stop-color="#D9EEF4" stop-opacity=".22"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".45"/></linearGradient>`;
+  for (const k of ORDER) s += `<linearGradient id="gS_${k}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${MAT[k].fill}"/><stop offset=".4" stop-color="${MAT[k].hi}"/><stop offset="1" stop-color="${MAT[k].fill}"/></linearGradient>`;
+  s += `</defs>
+  <style>
+    .eng{font:600 13px var(--font-ui);fill:#D5DAE1;letter-spacing:.04em}
+    .eng.sm{font-size:10.5px;letter-spacing:0;fill:#AEB5BF}
+    .lab{font:700 11.5px var(--font-ui);fill:#5A544C;letter-spacing:.06em}
+    .led{font:42px var(--font-led);fill:#FF4B33}
+    .ledg{font:42px var(--font-led);fill:#57F287}
+    .knob,.rock{touch-action:none}
+    .hit{cursor:pointer}
+    .smpTxt{font:700 11.5px var(--font-ui);fill:#2E2A25}
+    .smpM{font:500 10.5px var(--font-num);fill:#5A544C}
+  </style>`;
+
+  // ---- блок рабочего элемента РЭ-8 ----
+  s += `<rect x="20" y="14" width="456" height="632" rx="14" fill="url(#gBody)" stroke="#B4AEA5"/>`;
+  s += `<text x="40" y="38" class="lab">БЛОК РАБОЧЕГО ЭЛЕМЕНТА РЭ-8</text>`;
+  // нагреватель в разрезе
+  s += `<rect x="78" y="70" width="340" height="276" rx="10" fill="url(#gCase)" stroke="#5E666E"/>`;
+  s += `<rect x="96" y="112" width="304" height="218" rx="4" fill="url(#wool)" stroke="#9C8F6E"/>`;
+  s += `<text x="112" y="320" style="font:600 10px var(--font-ui);fill:#7E7254">теплоизоляция</text>`;
+  s += `<rect x="190" y="112" width="116" height="206" fill="url(#gCup)" stroke="#6E3B17"/>`;
+  s += `<rect x="200" y="112" width="96" height="196" fill="#2A211B"/>`;
+  s += `<g id="coil">`;
+  for (let y = 120; y < 312; y += 9) s += `<rect x="182" y="${y}" width="8" height="4.5" rx="2"/><rect x="306" y="${y}" width="8" height="4.5" rx="2"/>`;
+  s += `</g>`;
+  s += `<rect x="290" y="236" width="9" height="16" fill="#1E2328"/><path d="M299,244 C330,244 340,300 352,346" fill="none" stroke="#3A3F45" stroke-width="2"/>`;
+  s += `<text x="318" y="230" style="font:600 10px var(--font-ui);fill:#2E2A25">датчик</text>`;
+  s += `<g id="cupSample"></g>`;
+  // ручка выталкивания
+  s += `<g id="eject" class="hit"><rect x="242" y="318" width="12" height="44" fill="#6E767E"/><rect x="214" y="360" width="68" height="16" rx="8" fill="#2A2E33"/><text x="248" y="392" text-anchor="middle" style="font:600 10px var(--font-ui);fill:#3B362F">ручка выталкивания</text></g>`;
+  // крышка
+  s += `<g id="lid" class="hit"><rect x="176" y="92" width="144" height="20" rx="4" fill="url(#gLid)" stroke="#5E666E"/><rect x="234" y="80" width="28" height="13" rx="3" fill="#2A2E33"/></g>`;
+  s += `<text id="lidTxt" x="248" y="64" text-anchor="middle" style="font:600 11px var(--font-ui);fill:#3B362F">крышка закрыта</text>`;
+  // контроллер температуры
+  s += `<rect x="112" y="404" width="270" height="86" rx="9" fill="url(#gBezel)"/><rect x="126" y="416" width="170" height="54" rx="4" fill="#06120A"/>`;
+  s += `<text id="tDisp" x="284" y="459" text-anchor="end" class="ledg"></text>`;
+  s += `<text x="306" y="438" style="font:600 16px var(--font-ui);fill:#9DE8B4">°C</text><text x="306" y="462" class="eng sm">U838</text>`;
+  s += `<text x="247" y="484" text-anchor="middle" class="eng sm">ТЕМПЕРАТУРА</text>`;
+  // полка с гнёздами
+  s += `<rect x="40" y="512" width="416" height="118" rx="8" fill="#C3BDB3" stroke="#A39C90"/>`;
+  for (const k of ORDER) s += `<ellipse cx="${SHELF[k]}" cy="604" rx="26" ry="7" fill="#7D766B"/>`;
+  s += `<ellipse cx="396" cy="604" rx="18" ry="6" fill="#7D766B"/>`;
+  s += `<g id="shelf"></g>`;
+  s += `<g id="box" class="hit"><rect x="120" y="534" width="250" height="78" rx="6" fill="#B8803F" stroke="#7C5223"/><rect x="120" y="534" width="250" height="18" rx="6" fill="#CC9450"/>
+    <text x="245" y="578" text-anchor="middle" style="font:700 13px var(--font-ui);fill:#3B240B">Коробка с образцами</text>
+    <text x="245" y="597" text-anchor="middle" style="font:500 11px var(--font-ui);fill:#4E3212">нажмите, чтобы вставить в гнёзда</text></g>`;
+  // экран из оргстекла
+  s += `<g id="screen" class="hit"><rect x="32" y="48" width="432" height="458" rx="8" fill="url(#gGlass)" stroke="#9FB6BF" stroke-width="2"/>
+    <path d="M60,90 L170,60 M70,150 L240,80" stroke="#fff" stroke-width="6" opacity=".35" stroke-linecap="round"/>
+    <rect x="164" y="248" width="168" height="30" rx="15" fill="#1A1714" opacity=".78"/><text x="248" y="268" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#fff">Снять экран</text></g>`;
+
+  // ---- приборный блок БП-8 ----
+  s += `<rect x="492" y="14" width="488" height="304" rx="14" fill="url(#gPanel)" stroke="#121417"/>`;
+  s += `<text x="512" y="38" class="eng sm" style="letter-spacing:.08em">БЛОК ПРИБОРНЫЙ БП-8</text>`;
+  s += meterSVG('nV', 512, 50, 206, 168, 30, 30, 10, [0, 5, 10, 15, 20, 25, 30], 'В', '1,5');
+  s += meterSVG('nA', 732, 50, 206, 168, 2, 40, 10, [0, 0.5, 1, 1.5, 2], 'А', '1,5');
+  s += `<text x="615" y="240" text-anchor="middle" class="eng">НАПРЯЖЕНИЕ</text><text x="835" y="240" text-anchor="middle" class="eng">ТОК</text>`;
+  s += rockerSVG('rPow', 904, 238, 'Тумблер сеть');
+  s += `<circle id="vd1" cx="864" cy="270" r="8" fill="#2E1A0E" stroke="#0E0F11"/><text x="864" y="296" text-anchor="middle" class="eng sm">VD1</text>`;
+  s += `<text x="520" y="290" class="eng">СЕТЬ</text><path d="M566,286 H846" stroke="#4A515A" stroke-dasharray="3 4"/>`;
+
+  s += `<rect x="492" y="332" width="488" height="314" rx="14" fill="url(#gPanel)" stroke="#121417"/>`;
+  s += `<text x="512" y="356" class="eng sm" style="letter-spacing:.08em">КОНТРОЛЛЕР ВРЕМЕНИ</text>`;
+  s += `<rect x="512" y="368" width="250" height="84" rx="9" fill="url(#gBezel)"/><rect x="526" y="380" width="222" height="56" rx="4" fill="#120706"/>`;
+  s += `<text id="timDisp" x="716" y="423" text-anchor="end" class="led"></text><text x="724" y="430" style="font:600 13px var(--font-ui);fill:#FF7A66">с</text>`;
+  s += `<g id="bStart" class="hit"><circle cx="572" cy="500" r="24" fill="#14171A"/><circle cx="572" cy="500" r="18" fill="url(#gBtn)" stroke="#5A616A"/></g><text x="572" y="544" text-anchor="middle" class="eng sm" style="font-size:11px">ПУСК / СТОП</text>`;
+  s += `<g id="bReset" class="hit"><circle cx="672" cy="500" r="24" fill="#14171A"/><circle cx="672" cy="500" r="18" fill="#7A2318" stroke="#3A0F0A"/></g><text x="672" y="544" text-anchor="middle" class="eng sm" style="font-size:11px">СБРОС</text>`;
+  s += `<line x1="782" y1="360" x2="782" y2="626" stroke="#4A515A" stroke-dasharray="3 4"/>`;
+  s += `<text x="880" y="356" text-anchor="middle" class="eng sm" style="letter-spacing:.08em">НАГРЕВ</text>`;
+  s += knobSVG('kReg', 880, 432, 'Регулятор мощности нагрева');
+  s += `<text x="880" y="512" text-anchor="middle" class="eng sm" style="font-size:11px">регулятор</text>`;
+  s += rockerSVG('rHeat', 854, 530, 'Тумблер нагрев вкл');
+  s += `<text x="830" y="572" text-anchor="end" class="eng sm" style="font-size:11px">ВКЛ</text>`;
+  s += `<circle id="vd3" cx="944" cy="567" r="8" fill="#2E1A0E" stroke="#0E0F11"/><text x="944" y="592" text-anchor="middle" class="eng sm">VD3</text>`;
+  s += `<rect x="512" y="580" width="250" height="44" rx="6" fill="#30343A"/><text x="637" y="608" text-anchor="middle" style="font:700 15px var(--font-ui);fill:#C9CED6;letter-spacing:.12em">ФПТ1-8</text>`;
+  $('#stand').innerHTML = s;
+}
+buildStand();
+
+/* ---------- отрисовка сцены ---------- */
+const PX_V = { x: 615, y: 200 }, PX_A = { x: 835, y: 200 };
+function renderScene() {
+  const on = st.plug && st.power, heating = on && st.heatOn;
+  $('#screen').style.display = st.screen ? '' : 'none';
+  $('#box').style.display = st.placed ? 'none' : '';
+  $('#lid').setAttribute('transform', st.lid ? 'translate(118,-34) rotate(-8 248 102)' : '');
+  $('#lidTxt').textContent = st.lid ? 'крышка открыта' : 'крышка закрыта';
+  // образцы на полке
+  let sh = '';
+  if (st.placed) {
+    for (const k of ORDER) {
+      if (st.inCal === k) continue;
+      sh += `<g class="hit" data-smp="${k}">${sampleShape(k, SHELF[k], 604)}<text x="${SHELF[k]}" y="592" text-anchor="middle" class="smpM" style="fill:#2E2A25">${fmt(MAT[k].m * 1000, 1)} г</text></g>`;
+    }
+    sh += `<g><rect x="392" y="520" width="8" height="84" fill="#5E666E"/><path d="M386,522 L396,512 L406,522 Z" fill="#2A2E33"/></g>`;
+    sh += ORDER.map(k => `<text x="${SHELF[k]}" y="624" text-anchor="middle" class="smpTxt">${MAT[k].name}</text>`).join('');
+    sh += `<text x="396" y="624" text-anchor="middle" class="smpM">рукоятка</text>`;
+  }
+  $('#shelf').innerHTML = sh;
+  $('#cupSample').innerHTML = st.inCal ? `<g class="hit" data-cup="1">${sampleShape(st.inCal, 248, 308, 104, 58)}</g>` : '';
+  // тумблеры и лампочки
+  $('#rPow .shade').setAttribute('y', st.power ? 275 : 245);
+  $('#rHeat .shade').setAttribute('y', st.heatOn ? 567 : 537);
+  $('#rPow').setAttribute('aria-checked', String(st.power));
+  $('#rHeat').setAttribute('aria-checked', String(st.heatOn));
+  $('#vd1').setAttribute('fill', on ? '#FFB020' : '#2E1A0E');
+  $('#vd3').setAttribute('fill', heating ? '#FF5A30' : '#2E1A0E');
+  $('#kReg .rot').setAttribute('transform', `rotate(${(-135 + 270 * st.reg).toFixed(2)} 880 432)`);
+  $('#plugBtn').setAttribute('aria-pressed', String(st.plug));
+  $('#plugBtn').textContent = st.plug ? 'Вилка в розетке' : 'Вилка в розетку 220 В';
+}
+function renderDisplays() {
+  const on = st.plug && st.power;
+  $('#tDisp').textContent = on ? fmt(Math.round((st.Tsens + hidden.toff) * 10) / 10, 1) : '';
+  const tt = st.timer.run ? st.t - st.timer.t0 : st.timer.el;
+  $('#timDisp').textContent = on ? fmt(Math.floor(tt * 10 + 1e-6) / 10, 1) : '';
+  const glow = clamp((st.Tk - 22) / 30, 0, 1);
+  $('#coil').setAttribute('fill', on && st.heatOn ? `rgb(${Math.round(200 + 55 * glow)},${Math.round(90 - 40 * glow)},40)` : '#9C5A2A');
+  $('#nV').setAttribute('transform', `rotate(${(-MSPAN + 2 * MSPAN * st.meters.V.a / 30).toFixed(3)} ${PX_V.x} ${PX_V.y})`);
+  $('#nA').setAttribute('transform', `rotate(${(-MSPAN + 2 * MSPAN * st.meters.A.a / 2).toFixed(3)} ${PX_A.x} ${PX_A.y})`);
+}
+
+/* ---------- органы управления ---------- */
+let audio = null;
+function click(freq = 1300, dur = .03) {
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.05, audio.currentTime + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + dur);
+    o.connect(g).connect(audio.destination); o.start(); o.stop(audio.currentTime + dur + .01);
+  } catch (e) {}
+}
+const on = () => st.plug && st.power;
+function setFlag(k) { if (!flags[k]) { flags[k] = true; save(); renderSteps(); } }
+
+function togglePower() {
+  st.power = !st.power; click(st.power ? 1200 : 900, .04);
+  if (st.power && st.plug) {
+    if (!flags.minFirst) { if (st.reg > 0.01) toast('Регулятор нагрева не выведен на минимум (п. 5.1). Так установку не включают'); else setFlag('minFirst'); }
+    setFlag('power');
+  } else if (st.power && !st.plug) toast('Лампочка VD1 не горит: вилка не в розетке (п. 5.4)');
+  if (!st.power) heatEnd();
+  renderScene();
+}
+function toggleHeat() {
+  st.heatOn = !st.heatOn; click(st.heatOn ? 1150 : 850, .04);
+  if (st.heatOn) heatStart(); else heatEnd();
+  renderScene();
+}
+function heatStart() {
+  if (!on()) return;
+  st.heatOnT = st.t; st.heatOnReal = performance.now();
+  if (st.timer.run && st.heatOnReal - st.timerReal < 3000) setFlag('sync');
+  st.run = { inCal: st.inCal, T0: st.Tk, wait: st.inCal ? Math.min(st.t - st.insertT, st.t - st.lidT) : 0, lid: st.lid };
+  st.maxT = st.Tk;
+  if (!st.inCal && !st.lid) setFlag('emptyClosed');
+  if (st.lid) toast('Крышка калориметра открыта. Перед нагревом её плотно закрывают');
+  if (st.inCal && st.run.wait < 100) toast('По п. 5.12 нагрев с образцом начинают через 2–3 мин после установки образца и закрытия крышки');
+}
+function heatEnd() {
+  if (!st.run) return;
+  const r = st.run; st.run = null;
+  const dT = st.Tk - r.T0;
+  if (dT < 10) return;
+  if (!r.inCal && st.maxT <= 44.6) { setFlag('emptyRun'); if (!st.timer.run) setFlag('emptyEnd'); }
+  if (r.inCal && r.wait >= 100) setFlag('sampleRun');
+}
+function timerPress() {
+  if (!on()) return;
+  click(st.timer.run ? 1700 : 2100, .025);
+  if (st.timer.run) { st.timer.el = st.t - st.timer.t0; st.timer.run = false; if (!st.heatOn && flags.emptyRun) setFlag('emptyEnd'); }
+  else { st.timer.t0 = st.t - st.timer.el; st.timer.run = true; st.timerStartT = st.t; st.timerReal = performance.now(); if (st.heatOn && st.timerReal - st.heatOnReal < 3000) setFlag('sync'); }
+}
+function timerReset() { if (!on()) return; click(1500, .02); st.timer.run = false; st.timer.el = 0; }
+function bindPress(node, fn) {
+  node.addEventListener('click', fn);
+  node.setAttribute('tabindex', '0');
+  node.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(e); } });
+}
+bindPress($('#rPow'), togglePower);
+bindPress($('#rHeat'), toggleHeat);
+bindPress($('#bStart'), timerPress);
+bindPress($('#bReset'), timerReset);
+bindPress($('#screen'), () => { st.screen = false; setFlag('screen'); renderScene(); toast('Экран снят и подвешен сзади блока РЭ-8', 2200); });
+bindPress($('#box'), () => { st.placed = true; setFlag('placed'); renderScene(); });
+bindPress($('#lid'), () => {
+  st.lid = !st.lid; click(700, .05);
+  if (!st.lid) st.lidT = st.t;
+  if (st.run) st.run.lid = st.run.lid || st.lid;
+  renderScene();
+});
+function eject() {
+  if (!st.inCal) { toast('В калориметре нет образца'); return; }
+  if (!st.lid) { toast('Сначала откройте крышку калориметра'); return; }
+  const k = st.inCal; st.inCal = null; click(600, .06);
+  renderScene(); toast(`Образец (${MAT[k].name}) вынут на полку`, 2000);
+}
+bindPress($('#eject'), eject);
+$('#stand').addEventListener('click', e => {
+  const sm = e.target.closest('[data-smp]');
+  if (sm) {
+    const k = sm.dataset.smp;
+    if (!st.lid) { toast('Сначала откройте крышку калориметра'); return; }
+    if (st.inCal) { toast('В калориметре уже есть образец. Выньте его ручкой выталкивания'); return; }
+    if (st.heatOn) { toast('Во время нагрева образцы не меняют'); return; }
+    st.inCal = k; st.insertT = st.t; click(500, .06);
+    if (flags.emptyRun) setFlag('inserted');
+    renderScene(); toast(`Образец (${MAT[k].name}) вставлен рукояткой в калориметр. Закройте крышку`, 2600);
+    return;
+  }
+  if (e.target.closest('[data-cup]')) eject();
+});
+// регулятор мощности
+(() => {
+  const node = $('#kReg'); let drag = null;
+  node.addEventListener('pointerdown', e => { e.preventDefault(); node.focus({ preventScroll: true }); try { node.setPointerCapture(e.pointerId); } catch (err) {} drag = { y: e.clientY, v: st.reg }; });
+  node.addEventListener('pointermove', e => { if (!drag) return; st.reg = clamp(drag.v + (drag.y - e.clientY) * (e.shiftKey ? 1 / 1500 : 1 / 260), 0, 1); renderScene(); });
+  const end = () => { drag = null; };
+  node.addEventListener('pointerup', end); node.addEventListener('pointercancel', end); node.addEventListener('lostpointercapture', end);
+  node.addEventListener('wheel', e => { e.preventDefault(); st.reg = clamp(st.reg - Math.sign(e.deltaY) * (e.shiftKey ? 0.001 : 0.006), 0, 1); renderScene(); }, { passive: false });
+  node.addEventListener('keydown', e => {
+    const d = { ArrowUp: .004, ArrowRight: .004, ArrowDown: -.004, ArrowLeft: -.004, PageUp: .04, PageDown: -.04 };
+    if (e.key in d) { e.preventDefault(); st.reg = clamp(st.reg + d[e.key] * (e.shiftKey ? .25 : 1), 0, 1); renderScene(); }
+  });
+})();
+$('#coolBtn').addEventListener('click', () => {
+  if (st.heatOn && on()) { toast('Сначала выключите нагрев тумблером «ВКЛ»'); return; }
+  st.Tk = st.Tsens = hidden.room;
+  for (const k of ORDER) st.Ts[k] = hidden.room;
+  st.run = null;
+  toast('Калориметр и образцы остыли до температуры лаборатории', 2400);
+});
+$('#plugBtn').addEventListener('click', () => { st.plug = !st.plug; if (st.plug) setFlag('plug'); else heatEnd(); renderScene(); });
+$$('#speedSeg button').forEach(b => b.addEventListener('click', () => {
+  speed = +b.dataset.speed;
+  $$('#speedSeg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+}));
+
+/* ---------- физика ---------- */
+let hotWarned = false;
+function physics(dt) {
+  const heating = on() && st.heatOn;
+  st.U = heating ? 25 * st.reg : 0;
+  st.I = st.U / hidden.Rh;
+  const P = st.U * st.I;
+  const Gl = st.lid ? 0.55 : hidden.Gl;
+  let qs = 0;
+  if (st.inCal) qs = hidden.Gs * (st.Tk - st.Ts[st.inCal]);
+  st.Tk += dt * (P - qs - Gl * (st.Tk - hidden.room)) / hidden.Ck;
+  for (const k of ORDER) {
+    const C = MAT[k].m * cTrue(k);
+    if (st.inCal === k) st.Ts[k] += dt * qs / C;
+    else st.Ts[k] += dt * 0.10 * (hidden.room - st.Ts[k]) / C;
+  }
+  st.Tsens += (st.Tk - st.Tsens) * (1 - Math.exp(-dt / 3));
+  if (st.run) st.maxT = Math.max(st.maxT, st.Tk);
+  if (heating && st.reg > 0.05 && Math.abs(25 * st.reg - 18) < 0.8) setFlag('heatSet');
+}
+function meterStep(dt) {
+  const targets = { V: st.U * (1 + hidden.gV), A: st.I * (1 + hidden.gA) };
+  const lim = { V: 31, A: 2.07 };
+  for (const k of ['V', 'A']) {
+    const m = st.meters[k], wn = 2 * Math.PI * 1.3, z = .7;
+    const acc = wn * wn * (clamp(targets[k], 0, lim[k]) - m.a) - 2 * z * wn * m.v;
+    m.v += acc * dt; m.a += m.v * dt;
+    if (m.a < 0) { m.a = 0; m.v = -m.v * .2; }
+  }
+}
+
+/* ---------- журнал ---------- */
+const RUNNAME = { '0': 'пустой', st: 'сталь', al: 'алюм.', br: 'латунь' };
+function renderJournal() {
+  $('#jrBody').innerHTML = data.journal.map((r, i) => `<tr><td class="m">${RUNNAME[r.m] || ''}</td><td>${esc(r.t0)}</td><td>${esc(r.t1)}</td><td>${esc(r.tau)}</td><td>${esc(r.U)}</td><td>${esc(r.I)}</td><td><button class="x" data-del="${i}" aria-label="Удалить запись">×</button></td></tr>`).join('');
+  $('#jrEmpty').hidden = data.journal.length > 0;
+}
+$('#jrBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  data.journal.splice(+b.dataset.del, 1); save(); renderJournal();
+});
+$('#recBtn').addEventListener('click', () => {
+  const f = { m: $('#recM').value, t0: $('#recT0').value.trim(), t1: $('#recT1').value.trim(), tau: $('#recTau').value.trim(), U: $('#recU').value.trim(), I: $('#recI').value.trim() };
+  if (!isFinite(num(f.t0)) || !isFinite(num(f.t1))) { toast('Впишите начальную и конечную температуру'); return; }
+  if (!(num(f.tau) > 0)) { toast('Впишите время нагрева τ по контроллеру времени'); return; }
+  if (!(num(f.U) > 0) || !(num(f.I) > 0)) { toast('Впишите показания вольтметра и амперметра'); return; }
+  if (num(f.t1) > 44) toast('Конечная температура выше 44 °C, по п. 5.9 так нельзя', 3000);
+  data.journal.push(f);
+  for (const id of ['#recT0', '#recT1', '#recTau']) $(id).value = '';
+  save(); renderJournal();
+});
+$('#smpList').innerHTML = ORDER.map(k => `<dt>${MAT[k].Name}</dt><dd>m = ${fmt(MAT[k].m * 1000, 1)} г</dd>`).join('');
+
+/* ---------- таблицы и расчёт ---------- */
+const inp = (path, val, aria) => `<input data-p="${path}" value="${esc(val)}" inputmode="decimal" aria-label="${aria}">`;
+function renderCalc() {
+  $('#tBody').innerHTML = ORDER.map((k, i) => {
+    const r = data.rows[i];
+    return `<tr><td class="mat">${MAT[k].Name}</td>${['m', 'dt', 't1', 't2', 'I', 'U', 'c'].map(f => `<td>${inp(`rows.${i}.${f}`, r[f], `${MAT[k].name} ${f}`)}</td>`).join('')}</tr>`;
+  }).join('');
+  $('#dpBody').innerHTML = ORDER.map((k, i) => {
+    const r = data.dp[i];
+    return `<tr><td class="mat">${MAT[k].Name}</td><td>${MAT[k].mu}</td><td>${inp(`dp.${i}.cdp`, r.cdp, `${MAT[k].name} cДП`)}</td><td>${inp(`dp.${i}.c`, r.c, `${MAT[k].name} c опыт`)}</td><td>${inp(`dp.${i}.d`, r.d, `${MAT[k].name} δ`)}</td></tr>`;
+  }).join('');
+  $('#fBox').innerHTML = `
+    <div class="fline"><span class="cap">Количество теплоты от нагревателя (15)</span><math display="block"><mi>Q</mi><mo>=</mo><mi>I</mi><mi>U</mi><mi>τ</mi></math></div>
+    <div class="fline"><span class="cap">Удельная теплоёмкость образца (16)</span><math display="block"><mi>c</mi><mo>=</mo><mfrac><mrow><mi>I</mi><mi>U</mi><mo>(</mo><msub><mi>τ</mi><mn>2</mn></msub><mo>−</mo><msub><mi>τ</mi><mn>1</mn></msub><mo>)</mo></mrow><mrow><mi>m</mi><mi>Δ</mi><mi>t</mi></mrow></mfrac></math></div>
+    <div class="fline"><span class="cap">Закон Дюлонга и Пти (12), R = 8,31 Дж/(моль К)</span><math display="block"><msub><mi>c</mi><mi>ДП</mi></msub><mo>=</mo><mfrac><msub><mi>C</mi><mi>V</mi></msub><mi>μ</mi></mfrac><mo>=</mo><mfrac><mrow><mn>3</mn><mi>R</mi></mrow><mi>μ</mi></mfrac></math></div>
+    <div class="fline"><span class="cap">Расхождение опыта и теории</span><math display="block"><mi>δ</mi><mo>=</mo><mfrac><mrow><mo>|</mo><msub><mi>c</mi><mi>опыт</mi></msub><mo>−</mo><msub><mi>c</mi><mi>ДП</mi></msub><mo>|</mo></mrow><msub><mi>c</mi><mi>ДП</mi></msub></mfrac><mn>100</mn><mo>%</mo></math></div>`;
+  $('#conc').value = data.conc;
+}
+function setPath(path, v) { const k = path.split('.'); data[k[0]][+k[1]][k[2]] = v; }
+$('#v-calc').addEventListener('input', e => {
+  if (e.target.id === 'conc') { data.conc = e.target.value; save(); renderSteps(); return; }
+  const p = e.target.dataset && e.target.dataset.p; if (!p) return;
+  setPath(p, e.target.value); save(); renderSteps();
+});
+let resetArm = 0;
+$('#restartBtn').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if (performance.now() - resetArm > 3000) { resetArm = performance.now(); b.textContent = 'Точно? Нажмите ещё раз'; setTimeout(() => { b.textContent = 'Начать заново'; }, 3000); return; }
+  try { localStorage.removeItem(KEY); } catch (err) {}
+  location.hash = ''; location.reload();
+});
+
+/* ---------- рисунок 1 в теории ---------- */
+(() => {
+  let d = '';
+  for (let T = 0; T <= 680; T += 5) {
+    const x = T / 300, C = 1 - 1 / (1 + Math.pow(x * 3.2, 3) / 3);   // качественная кривая: ~T³ у нуля, 3R при больших T
+    d += (d ? 'L' : 'M') + (50 + T * 0.57).toFixed(1) + ',' + (180 - 128 * C).toFixed(1);
+  }
+  $('#debye').setAttribute('d', d);
+})();
+
+/* ---------- ход работы ---------- */
+function renderSteps() {
+  const f = (i, k) => String(data.rows[i][k]).trim() !== '';
+  const done = [
+    flags.minFirst, flags.screen, flags.placed, flags.plug, flags.power, flags.emptyClosed, flags.heatSet, flags.sync,
+    flags.emptyRun, flags.emptyEnd, flags.inserted, flags.sampleRun,
+    [0, 1, 2].some(i => f(i, 't2')), [0, 1, 2].some(i => f(i, 'c')), [0, 1, 2].every(i => f(i, 'c')),
+    data.dp.every(r => String(r.cdp).trim()) && String(data.conc).trim().length > 20
+  ];
+  $$('#steps li').forEach((li, i) => li.classList.toggle('done', !!done[i]));
+}
+
+/* ---------- вкладки ---------- */
+let currentTab = 'setup';
+function showTab(name) {
+  if (!['setup', 'calc', 'theory'].includes(name)) name = 'setup';
+  currentTab = name;
+  $$('.view').forEach(v => v.hidden = v.id !== 'v-' + name);
+  $$('.tabs a').forEach(a => a.setAttribute('aria-current', a.dataset.tab === name ? 'page' : 'false'));
+  if (name === 'calc') renderCalc();
+}
+$$('.tabs a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); history.replaceState(null, '', '#' + a.dataset.tab); showTab(a.dataset.tab); }));
+window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+function renderAll() { renderJournal(); renderSteps(); if (currentTab === 'calc') renderCalc(); }
+
+/* ---------- главный цикл ---------- */
+let last = performance.now();
+function frame(ts) {
+  const rdt = Math.min(0.05, Math.max(0, (ts - last) / 1000)); last = ts;
+  try {
+    let left = rdt * speed;
+    while (left > 1e-6) { const h = Math.min(0.05, left); physics(h); st.t += h; left -= h; }
+    let ml = rdt;
+    while (ml > 1e-6) { const h = Math.min(1 / 240, ml); meterStep(h); ml -= h; }
+    if (st.Tk > 44.3 && st.heatOn && !hotWarned) { hotWarned = true; toast('Температура выше 44 °C. По п. 5.9 так перегревать нельзя, выключите нагрев'); }
+    if (st.Tk < 43) hotWarned = false;
+    if (currentTab === 'setup') renderDisplays();
+  } catch (err) { console.error(err); }
+  requestAnimationFrame(frame);
+}
+
+renderScene();
+showTab(location.hash.slice(1) || 'setup');
+renderAll();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+
+/* ---------- телефон ---------- */
+$('#stand').addEventListener('touchstart', e => { if (e.target.closest && e.target.closest('.knob, .drag')) e.preventDefault(); }, { passive: false });
+try { if (window.matchMedia('(max-width:860px)').matches) { const sb = document.querySelector('details.stepsbox'); if (sb) sb.open = false; } } catch (e) {}
+(() => {
+  const b = document.getElementById('fitBtn'); if (!b) return;
+  b.addEventListener('click', () => {
+    const w = document.querySelector('.stand-wrap'), v = !w.classList.contains('fit');
+    w.classList.toggle('fit', v); b.setAttribute('aria-pressed', String(v)); b.textContent = v ? 'Обычный размер' : 'Вписать в экран';
+  });
+})();
+const unlock = () => { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) {} };
+document.addEventListener('touchend', unlock, { passive: true });
+document.addEventListener('click', unlock);
+window.__lab = { st, hidden, data, flags, MAT, cTrue, physics, togglePower, toggleHeat, timerPress, timerReset };   // для автоматической проверки
+})();
+</script>
+</body>
+</html>

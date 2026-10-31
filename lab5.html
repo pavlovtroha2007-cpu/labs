@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Скорость звука в воздухе</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Share+Tech+Mono&display=swap">
+<style>
+/* Рабочее место: слева ход работы, в центре установка ФПТ1-7, справа журнал отсчётов */
+:root{
+  --bg:#F2F4F7; --surface:#FFFFFF; --surface-2:#F0F2F6; --ink:#151A21; --muted:#5E6672; --line:#DCE0E7;
+  --accent:#1E4FD6; --accent-ink:#FFFFFF; --accent-soft:#E9EFFD; --signal:#C2261D;
+  --font-ui:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+  --font-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --font-led:"Share Tech Mono","IBM Plex Mono",monospace;
+  --r:10px; color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--font-ui);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{padding-inline:16px;max-width:1600px;margin:0 auto}
+
+.top{position:sticky;top:0;z-index:20;background:rgba(242,244,247,.92);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;gap:14px 28px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;gap:14px;align-items:center;min-width:0}
+.badge{flex:none;width:50px;height:50px;border-radius:12px;background:var(--accent);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.badge span{font-size:10.5px;font-weight:700;letter-spacing:.06em;opacity:.8}
+.badge b{font-size:22px;font-weight:800}
+.brand small{color:var(--muted);font-size:12.5px;font-weight:600}
+.brand h1{margin:0;font-size:clamp(16px,1.5vw,20px);line-height:1.25;font-weight:750;text-wrap:balance}
+.hdr-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tabs{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.tabs a{padding:7px 14px;border-radius:999px;text-decoration:none;color:var(--muted);font-weight:650;font-size:13.5px;white-space:nowrap}
+.tabs a[aria-current="page"]{background:var(--ink);color:#fff}
+.tabs a:hover:not([aria-current="page"]){color:var(--ink);background:var(--surface-2)}
+main{padding-block:18px 48px}
+.view[hidden]{display:none!important}
+
+.setup{display:grid;grid-template-columns:300px minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:1280px){.setup{grid-template-columns:minmax(0,1fr) 300px}.steps-col{grid-column:1/-1;order:3}}
+@media (max-width:860px){.setup{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.panel h2,.panel h3{margin:0 0 12px;font-size:14.5px;font-weight:750}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+.steps{list-style:none;margin:0;padding:0;counter-reset:st}
+.steps li{position:relative;padding:0 0 11px 30px;font-size:13.2px;line-height:1.45;color:var(--ink)}
+.steps li::before{content:"";position:absolute;left:5px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid #C3C9D2;background:var(--surface);box-sizing:border-box}
+.steps li::after{content:"";position:absolute;left:10px;top:19px;bottom:1px;width:2px;background:#E3E6EB}
+.steps li:last-child::after{display:none}
+.steps li.done::before{background:var(--accent);border-color:var(--accent)}
+.steps li.done::after{background:color-mix(in srgb,var(--accent) 35%,#E3E6EB)}
+.steps .n{font:600 11.5px var(--font-num);color:var(--muted);margin-right:3px}
+.steps li.done .n{color:var(--accent)}
+
+.stage-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;min-width:0}
+.stand-wrap{background:#E6E9EE;padding:12px;overflow-x:auto}
+#stand{display:block;width:100%;min-width:660px;height:auto;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.controls{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;padding:12px 16px;border-top:1px solid var(--line)}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctl .lbl{font-size:12.5px;color:var(--muted);font-weight:600}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:650;font-size:13.5px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;user-select:none;-webkit-user-select:none;line-height:1.2}
+.btn:hover{border-color:#B9C0CA}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.danger{color:var(--signal)}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:6px 11px;font:600 13px var(--font-num);cursor:pointer;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.muted{color:var(--muted)}
+.tiny{font-size:12.5px;line-height:1.45}
+.note-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+
+.field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
+.field input,.field select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 8px;font:500 14px var(--font-num);color:var(--ink);min-width:0;width:100%}
+.rec-grid{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,1fr);gap:8px}
+.jr{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;margin-top:12px}
+.jr th{font-weight:650;color:var(--muted);text-align:left;padding:5px 4px;border-bottom:1px solid var(--line);font-size:11.5px}
+.jr td{padding:5px 4px;border-bottom:1px solid var(--line);font-family:var(--font-num);font-size:12.5px}
+.jr tr:last-child td{border-bottom:0}
+.jr .x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0 4px}
+.jr .x:hover{color:var(--signal)}
+.empty{color:var(--muted);font-size:12.5px;padding:8px 0 0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font:600 13px var(--font-num)}
+
+.calc{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1100px){.calc{grid-template-columns:minmax(0,1fr)}}
+.tblwrap{overflow-x:auto}
+table.lab{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+table.lab th,table.lab td{border:1px solid var(--line);padding:6px 7px;text-align:center;vertical-align:middle}
+table.lab th{background:var(--surface-2);font-weight:700;font-size:13px}
+table.lab td{font-family:var(--font-num);font-size:13px}
+table.lab td input{width:100%;min-width:62px;border:1px solid transparent;background:var(--surface-2);border-radius:6px;padding:6px;text-align:center;font:500 13px var(--font-num);color:var(--ink)}
+table.lab td input:hover{border-color:var(--line)}
+table.lab td input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+.formula{display:flex;flex-direction:column;gap:10px}
+.fline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 12px;background:var(--surface-2);border-radius:8px;border:1px solid var(--line);overflow-x:auto}
+.fline .cap{flex-basis:100%;font-size:12px;color:var(--muted);font-weight:600}
+.fline input{flex:1 1 140px;min-width:0;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:500 14px var(--font-num);background:var(--surface)}
+.fline input:focus{border-color:var(--accent);outline:none}
+.fline input.w{flex:0 1 110px}
+math{font-family:"STIX Two Math","Cambria Math","Latin Modern Math","Times New Roman",serif;font-size:1.1em}
+textarea.conc{width:100%;min-height:150px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface);resize:vertical;line-height:1.55}
+textarea.conc:focus{border-color:var(--accent);outline:none}
+#graph{width:100%;height:auto;display:block}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2.5px solid;vertical-align:middle;margin-right:6px}
+
+.theory{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1000px){.theory{grid-template-columns:minmax(0,1fr)}}
+.prose{max-width:74ch}
+.prose h2{font-size:17px;margin:0 0 8px}
+.prose h3{font-size:15px;margin:18px 0 6px}
+.prose p{margin:0 0 10px}
+.prose figure{margin:8px 0 12px}
+.prose figcaption{font-size:12.5px;color:var(--muted);text-align:center}
+ol.qlist{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:8px}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;z-index:50;max-width:min(560px,calc(100vw - 32px));pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---------- телефон и режим предпросмотра ---------- */
+.nojs{margin:0 0 14px;padding:14px 16px;border-radius:10px;background:#FFF4E5;border:1px solid #F5C17A;color:#5A3A00;font-size:15px;line-height:1.5}
+.nojs b{display:block;font-size:16px;margin-bottom:4px}
+details.stepsbox>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px}
+details.stepsbox>summary::-webkit-details-marker{display:none}
+details.stepsbox>summary h2{margin:0}
+details.stepsbox>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-top:-4px;flex:none}
+details.stepsbox[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+details.stepsbox[open]>summary{margin-bottom:12px}
+.mob{display:none}
+.stand-wrap.fit #stand{min-width:0}
+@media (max-width:860px){
+  .top{position:static;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .stage-card{order:-1}
+  .steps-col{order:0}
+  .setup>aside:last-child{order:1}
+  .mob{display:flex}
+  input,select,textarea{font-size:16px!important}
+  .btn{min-height:40px}
+  .btn.small{min-height:36px}
+  .stand-wrap{padding:8px;-webkit-overflow-scrolling:touch}
+}
+@media (max-width:860px) and (orientation:landscape){.rot-hint{display:none}}
+@media (max-width:860px){
+  .hdr-right{width:100%}
+  .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:1 1 260px;border-radius:12px}
+  .tabs a{text-align:center;white-space:normal;line-height:1.2;border-radius:9px;padding:8px 6px;display:flex;align-items:center;justify-content:center}
+  .controls>.note-chip{display:none}
+}
+@media (max-height:520px) and (orientation:landscape){
+  .brand small{display:none}
+  .badge{width:40px;height:40px}
+  .badge b{font-size:18px}
+  .brand h1{font-size:15px}
+  .top .wrap{padding-block:8px}
+  .tabs a{padding:5px 12px}
+  main{padding-top:10px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="badge"><span>ЛР</span><b>5</b></div>
+      <div>
+        <small>Лабораторная работа № 5, установка ФПТ1-7</small>
+        <h1>Определение скорости звука в воздухе методом звукового резонанса</h1>
+      </div>
+    </div>
+    <div class="hdr-right">
+    <nav class="tabs" aria-label="Разделы">
+      <a href="#setup" data-tab="setup" aria-current="page">Установка</a>
+      <a href="#calc" data-tab="calc">Таблицы и расчёт</a>
+      <a href="#theory" data-tab="theory">Теория и вопросы</a>
+    </nav>
+    <button class="btn small danger" id="restartBtn" title="Стереть журнал, таблицы, вывод и все отметки">Начать заново</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="nojs" id="nojs"><b>Лаба открыта в режиме предпросмотра</b>В нём не работают скрипты, поэтому установка не оживает и вкладки не переключаются. Откройте лабу по ссылке в Safari или Chrome, тогда всё заработает</div>
+
+<!-- ============ УСТАНОВКА ============ -->
+<section class="view" id="v-setup">
+  <div class="setup">
+    <aside class="col steps-col">
+      <details class="panel stepsbox" open><summary><h2>Ход работы</h2></summary>
+        <ol class="steps" id="steps">
+          <li><span class="n">1.</span>Ознакомиться с конструкцией установки ФПТ1-7. На рис. 4 показан общий вид установки для измерения скорости звука в воздухе.</li>
+          <li><span class="n">2.</span>Подготовить установку к работе. Для этого вывести ручки потенциометров на минимум, осторожно вращая их против часовой стрелки.</li>
+          <li><span class="n">3.</span>Подключить вилку к розетке сети (U = 220 В).</li>
+          <li><span class="n">4.</span>Включить тумблер «сеть». Загорается сигнальная лампочка на приборной панели.</li>
+          <li><span class="n">5.</span>Включить генератор звуковых колебаний ручкой «усил.», расположенной на приборной панели слева.</li>
+          <li><span class="n">6.</span>Рукоятками «грубо» и «точно», изменяя частоту звуковых колебаний, следить за показаниями микроамперметра. Момент остановки стрелки в крайнем правом положении соответствует первому резонансу (n = 1). Частоту ν<sub>1</sub> определяем по прибору на блоке рабочего элемента слева.</li>
+          <li><span class="n">7.</span>По формуле λ<sub>1</sub> = 2L/n, где n = 1, определяем длину звуковой волны.</li>
+          <li><span class="n">8.</span>По формуле V<sub>1</sub> = λ<sub>1</sub>ν<sub>1</sub> рассчитываем скорость звуковой волны при n = 1.</li>
+          <li><span class="n">9.</span>Затем, постепенно изменяя частоту, определить второй, третий и четвёртый резонансы и соответствующие им частоты колебаний.</li>
+          <li><span class="n">10.</span>Рассчитать длины волн при различных частотах (ν<sub>2</sub>, ν<sub>3</sub> и ν<sub>4</sub>) и скорость звука.</li>
+          <li><span class="n">11.</span>Найти среднее значение скорости V<sub>ср</sub>.</li>
+          <li><span class="n">12.</span>Данные занести в табл. 1.</li>
+          <li><span class="n">13.</span>Вычислить среднюю абсолютную погрешность измерений и записать результат: V = V<sub>ср</sub> ± ΔV.</li>
+          <li><span class="n">14.</span>Включить нагреватель рукояткой «нагрев» и измерить скорость звука в воздухе при различных температурах. Результаты занести в табл. 2.</li>
+          <li><span class="n">15.</span>Построить график зависимости скорости звука от температуры по данным табл. 2 и в соответствии с формулой (2).</li>
+          <li><span class="n">16.</span>Сравнить опытную и теоретическую кривые зависимости V от t и сделать выводы из проделанной работы.</li>
+        </ol>
+      </details>
+    </aside>
+
+    <div class="stage-card">
+      <div class="stand-wrap">
+        <svg id="stand" width="1000" height="660" viewBox="0 0 1000 660" aria-label="Установка ФПТ1-7: частотомер, микроамперметр, термометр, стеклянная трубка с телефоном и микрофоном, приборный блок с ручками усил., частота, нагрев и тумблером сеть"><defs>
+    <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9ECF0"></stop><stop offset="1" stop-color="#CDD2D9"></stop></linearGradient>
+    <linearGradient id="gRail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#AEB5BE"></stop><stop offset=".5" stop-color="#C6CCD3"></stop><stop offset="1" stop-color="#A3AAB4"></stop></linearGradient>
+    <linearGradient id="gPanel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A4049"></stop><stop offset="1" stop-color="#262A30"></stop></linearGradient>
+    <linearGradient id="gBezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#30353C"></stop><stop offset="1" stop-color="#16191D"></stop></linearGradient>
+    <linearGradient id="gFace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFBF6"></stop><stop offset="1" stop-color="#ECE8DB"></stop></linearGradient>
+    <linearGradient id="gLcd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C3CDB3"></stop><stop offset="1" stop-color="#A9B597"></stop></linearGradient>
+    <linearGradient id="gHouse" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2A2F35"></stop><stop offset=".5" stop-color="#4A515A"></stop><stop offset="1" stop-color="#22262B"></stop></linearGradient>
+    <linearGradient id="gGlass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EAF4FB" stop-opacity=".95"></stop><stop offset=".22" stop-color="#FFFFFF" stop-opacity=".9"></stop><stop offset=".6" stop-color="#D6E6F1" stop-opacity=".7"></stop><stop offset="1" stop-color="#B9CFDE" stop-opacity=".85"></stop></linearGradient>
+    <radialGradient id="gKnob" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#5A6069"></stop><stop offset=".6" stop-color="#1E2227"></stop><stop offset="1" stop-color="#0C0E10"></stop></radialGradient>
+    <radialGradient id="gKnobCap" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#8E959E"></stop><stop offset="1" stop-color="#3A4048"></stop></radialGradient>
+    <radialGradient id="gLampOn" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#FFF4C4"></stop><stop offset=".45" stop-color="#FFB020"></stop><stop offset="1" stop-color="#A35A00"></stop></radialGradient>
+    <radialGradient id="gLampOff" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#7A6440"></stop><stop offset="1" stop-color="#2E2414"></stop></radialGradient>
+    <linearGradient id="gRock" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C535C"></stop><stop offset="1" stop-color="#1B1E22"></stop></linearGradient>
+  </defs>
+  <style>
+    .eng{font:600 14px var(--font-ui);fill:#D5DAE1;letter-spacing:.04em}
+    .eng.sm{font-size:10.5px;letter-spacing:0;fill:#AEB5BF}
+    .eng.dk{fill:#3B424C}
+    .lab{font:700 12px var(--font-ui);fill:#4B535D;letter-spacing:.06em}
+    .mlab{font:600 14px var(--font-num);fill:#1A1A1A}
+    .led{font:46px var(--font-led);fill:#FF4B33}
+    .ledoff{font:46px var(--font-led);fill:#4A1E18}
+    .lcd{font:46px var(--font-led);fill:#1E2618}
+    .knob,.rock{touch-action:none}
+  </style><rect x="20" y="14" width="960" height="344" rx="14" fill="url(#gBody)" stroke="#AEB4BC"></rect><text x="40" y="38" class="lab">БЛОК РАБОЧЕГО ЭЛЕМЕНТА</text><g><rect x="56" y="52" width="270" height="128" rx="10" fill="url(#gBezel)"></rect>
+    <rect x="74" y="70" width="234" height="70" rx="5" fill="#120706"></rect>
+        <text id="fDisp" x="288" y="124" text-anchor="end" class="led"></text>
+    <text x="296" y="132" class="eng sm" fill="#FF7A66">Гц</text>
+    <text x="191" y="166" text-anchor="middle" class="eng sm">ЧАСТОТОМЕР</text></g><g><rect x="366" y="40" width="268" height="168" rx="10" fill="url(#gBezel)"></rect>
+    <rect x="378" y="52" width="244" height="144" rx="5" fill="url(#gFace)"></rect><g stroke="#1A1A1A"><line x1="414.2" y1="110.0" x2="425.7" y2="119.6" stroke-width="1.5"></line><line x1="416.8" y1="107.1" x2="421.2" y2="111.1" stroke-width="0.75"></line><line x1="419.4" y1="104.2" x2="423.7" y2="108.4" stroke-width="0.75"></line><line x1="422.2" y1="101.4" x2="426.4" y2="105.7" stroke-width="0.75"></line><line x1="425.1" y1="98.8" x2="429.1" y2="103.2" stroke-width="0.75"></line><line x1="428.0" y1="96.2" x2="434.4" y2="103.9" stroke-width="1.1"></line><line x1="431.0" y1="93.7" x2="434.7" y2="98.5" stroke-width="0.75"></line><line x1="434.2" y1="91.4" x2="437.7" y2="96.2" stroke-width="0.75"></line><line x1="437.4" y1="89.1" x2="440.7" y2="94.1" stroke-width="0.75"></line><line x1="440.6" y1="87.0" x2="443.8" y2="92.1" stroke-width="0.75"></line><line x1="444.0" y1="85.0" x2="451.5" y2="98.0" stroke-width="1.5"></line><line x1="447.4" y1="83.1" x2="450.2" y2="88.4" stroke-width="0.75"></line><line x1="450.9" y1="81.3" x2="453.5" y2="86.7" stroke-width="0.75"></line><line x1="454.4" y1="79.7" x2="456.9" y2="85.2" stroke-width="0.75"></line><line x1="458.0" y1="78.2" x2="460.3" y2="83.7" stroke-width="0.75"></line><line x1="461.7" y1="76.8" x2="465.1" y2="86.2" stroke-width="1.1"></line><line x1="465.4" y1="75.5" x2="467.2" y2="81.2" stroke-width="0.75"></line><line x1="469.1" y1="74.3" x2="470.8" y2="80.1" stroke-width="0.75"></line><line x1="472.9" y1="73.3" x2="474.4" y2="79.1" stroke-width="0.75"></line><line x1="476.7" y1="72.4" x2="478.0" y2="78.3" stroke-width="0.75"></line><line x1="480.6" y1="71.7" x2="483.2" y2="86.5" stroke-width="1.5"></line><line x1="484.4" y1="71.1" x2="485.2" y2="77.0" stroke-width="0.75"></line><line x1="488.3" y1="70.6" x2="488.9" y2="76.6" stroke-width="0.75"></line><line x1="492.2" y1="70.3" x2="492.6" y2="76.3" stroke-width="0.75"></line><line x1="496.1" y1="70.1" x2="496.3" y2="76.1" stroke-width="0.75"></line><line x1="500.0" y1="70.0" x2="500.0" y2="80.0" stroke-width="1.1"></line><line x1="503.9" y1="70.1" x2="503.7" y2="76.1" stroke-width="0.75"></line><line x1="507.8" y1="70.3" x2="507.4" y2="76.3" stroke-width="0.75"></line><line x1="511.7" y1="70.6" x2="511.1" y2="76.6" stroke-width="0.75"></line><line x1="515.6" y1="71.1" x2="514.8" y2="77.0" stroke-width="0.75"></line><line x1="519.4" y1="71.7" x2="516.8" y2="86.5" stroke-width="1.5"></line><line x1="523.3" y1="72.4" x2="522.0" y2="78.3" stroke-width="0.75"></line><line x1="527.1" y1="73.3" x2="525.6" y2="79.1" stroke-width="0.75"></line><line x1="530.9" y1="74.3" x2="529.2" y2="80.1" stroke-width="0.75"></line><line x1="534.6" y1="75.5" x2="532.8" y2="81.2" stroke-width="0.75"></line><line x1="538.3" y1="76.8" x2="534.9" y2="86.2" stroke-width="1.1"></line><line x1="542.0" y1="78.2" x2="539.7" y2="83.7" stroke-width="0.75"></line><line x1="545.6" y1="79.7" x2="543.1" y2="85.2" stroke-width="0.75"></line><line x1="549.1" y1="81.3" x2="546.5" y2="86.7" stroke-width="0.75"></line><line x1="552.6" y1="83.1" x2="549.8" y2="88.4" stroke-width="0.75"></line><line x1="556.0" y1="85.0" x2="548.5" y2="98.0" stroke-width="1.5"></line><line x1="559.4" y1="87.0" x2="556.2" y2="92.1" stroke-width="0.75"></line><line x1="562.6" y1="89.1" x2="559.3" y2="94.1" stroke-width="0.75"></line><line x1="565.8" y1="91.4" x2="562.3" y2="96.2" stroke-width="0.75"></line><line x1="569.0" y1="93.7" x2="565.3" y2="98.5" stroke-width="0.75"></line><line x1="572.0" y1="96.2" x2="565.6" y2="103.9" stroke-width="1.1"></line><line x1="574.9" y1="98.8" x2="570.9" y2="103.2" stroke-width="0.75"></line><line x1="577.8" y1="101.4" x2="573.6" y2="105.7" stroke-width="0.75"></line><line x1="580.6" y1="104.2" x2="576.3" y2="108.4" stroke-width="0.75"></line><line x1="583.2" y1="107.1" x2="578.8" y2="111.1" stroke-width="0.75"></line><line x1="585.8" y1="110.0" x2="574.3" y2="119.6" stroke-width="1.5"></line><path d="M414.2,110.0 A112 112 0 0 1 585.8,110.0" fill="none" stroke-width="1"></path></g><text x="404.2" y="106.7" text-anchor="middle" class="mlab">0</text><text x="437.5" y="78.7" text-anchor="middle" class="mlab">20</text><text x="478.3" y="63.9" text-anchor="middle" class="mlab">40</text><text x="521.7" y="63.9" text-anchor="middle" class="mlab">60</text><text x="562.5" y="78.7" text-anchor="middle" class="mlab">80</text><text x="595.8" y="106.7" text-anchor="middle" class="mlab">100</text><text x="500" y="148" text-anchor="middle" style="font:700 22px var(--font-ui);fill:#1A1A1A">мкА</text><text x="398" y="186" style="font:600 11px var(--font-num);fill:#333">1,5</text><g id="needle" transform="rotate(-50.000 500 182)"><line x1="500" y1="190" x2="500" y2="68" stroke="#B3261E" stroke-width="1.6"></line></g><path d="M474,196 A26 26 0 0 1 526,196 Z" fill="#23272C"></path><text x="500" y="226" text-anchor="middle" class="lab">МИКРОАМПЕРМЕТР</text></g><g><rect x="674" y="52" width="270" height="128" rx="10" fill="url(#gBezel)"></rect>
+    <rect x="692" y="70" width="234" height="70" rx="5" fill="url(#gLcd)"></rect>
+    <text id="tDisp" x="878" y="124" text-anchor="end" class="lcd"></text>
+    <text x="884" y="104" style="font:600 18px var(--font-ui);fill:#1E2618">°C</text>
+    <text x="809" y="166" text-anchor="middle" class="eng sm">ТЕРМОМЕТР</text></g><rect x="36" y="240" width="928" height="108" rx="10" fill="url(#gRail)" stroke="#9AA2AC"></rect><rect x="46" y="250" width="128" height="84" rx="8" fill="url(#gHouse)"></rect><circle cx="83" cy="268" r="3" fill="#15181C"></circle><circle cx="83" cy="283" r="3" fill="#15181C"></circle><circle cx="83" cy="298" r="3" fill="#15181C"></circle><circle cx="101" cy="268" r="3" fill="#15181C"></circle><circle cx="101" cy="283" r="3" fill="#15181C"></circle><circle cx="101" cy="298" r="3" fill="#15181C"></circle><circle cx="119" cy="268" r="3" fill="#15181C"></circle><circle cx="119" cy="283" r="3" fill="#15181C"></circle><circle cx="119" cy="298" r="3" fill="#15181C"></circle><circle cx="137" cy="268" r="3" fill="#15181C"></circle><circle cx="137" cy="283" r="3" fill="#15181C"></circle><circle cx="137" cy="298" r="3" fill="#15181C"></circle><text x="110" y="326" text-anchor="middle" class="eng sm">телефон</text><rect x="826" y="250" width="128" height="84" rx="8" fill="url(#gHouse)"></rect><circle cx="890" cy="286" r="18" fill="#15181C" stroke="#5A616A"></circle><circle cx="890" cy="286" r="9" fill="#2C3137"></circle><text x="890" y="326" text-anchor="middle" class="eng sm">микрофон</text><rect x="174" y="262" width="652" height="56" fill="url(#gGlass)" stroke="#7E93A6" stroke-width="1"></rect><g id="press"><rect x="174.00" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="182.15" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="190.30" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="198.45" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="206.60" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="214.75" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="222.90" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="231.05" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="239.20" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="247.35" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="255.50" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="263.65" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="271.80" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="279.95" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="288.10" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="296.25" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="304.40" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="312.55" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="320.70" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="328.85" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="337.00" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="345.15" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="353.30" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="361.45" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="369.60" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="377.75" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="385.90" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="394.05" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="402.20" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="410.35" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="418.50" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="426.65" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="434.80" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="442.95" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="451.10" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="459.25" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="467.40" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="475.55" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="483.70" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="491.85" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="500.00" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="508.15" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="516.30" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="524.45" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="532.60" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="540.75" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="548.90" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="557.05" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="565.20" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="573.35" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="581.50" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="589.65" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="597.80" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="605.95" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="614.10" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="622.25" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="630.40" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="638.55" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="646.70" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="654.85" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="663.00" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="671.15" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="679.30" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="687.45" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="695.60" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="703.75" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="711.90" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="720.05" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="728.20" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="736.35" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="744.50" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="752.65" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="760.80" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="768.95" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="777.10" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="785.25" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="793.40" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="801.55" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="809.70" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect><rect x="817.85" y="264" width="8.55" height="52" fill="#1E4FD6" fill-opacity="0.000"></rect></g><g id="air"><circle cx="180.00" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="191.03" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="202.07" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="213.10" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="224.14" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="235.17" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="246.21" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="257.24" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="268.28" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="279.31" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="290.34" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="301.38" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="312.41" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="323.45" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="334.48" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="345.52" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="356.55" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="367.59" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="378.62" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="389.66" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="400.69" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="411.72" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="422.76" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="433.79" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="444.83" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="455.86" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="466.90" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="477.93" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="488.97" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="500.00" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="511.03" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="522.07" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="533.10" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="544.14" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="555.17" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="566.21" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="577.24" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="588.28" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="599.31" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="610.34" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="621.38" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="632.41" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="643.45" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="654.48" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="665.52" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="676.55" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="687.59" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="698.62" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="709.66" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="720.69" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="731.72" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="742.76" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="753.79" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="764.83" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="775.86" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="786.90" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="797.93" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="808.97" cy="272" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="185.52" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="196.55" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="207.59" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="218.62" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="229.66" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="240.69" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="251.72" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="262.76" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="273.79" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="284.83" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="295.86" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="306.90" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="317.93" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="328.97" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="340.00" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="351.03" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="362.07" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="373.10" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="384.14" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="395.17" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="406.21" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="417.24" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="428.28" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="439.31" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="450.34" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="461.38" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="472.41" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="483.45" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="494.48" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="505.52" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="516.55" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="527.59" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="538.62" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="549.66" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="560.69" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="571.72" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="582.76" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="593.79" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="604.83" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="615.86" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="626.90" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="637.93" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="648.97" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="660.00" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="671.03" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="682.07" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="693.10" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="704.14" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="715.17" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="726.21" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="737.24" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="748.28" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="759.31" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="770.34" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="781.38" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="792.41" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="803.45" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="814.48" cy="284" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="180.00" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="191.03" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="202.07" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="213.10" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="224.14" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="235.17" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="246.21" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="257.24" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="268.28" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="279.31" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="290.34" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="301.38" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="312.41" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="323.45" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="334.48" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="345.52" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="356.55" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="367.59" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="378.62" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="389.66" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="400.69" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="411.72" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="422.76" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="433.79" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="444.83" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="455.86" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="466.90" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="477.93" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="488.97" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="500.00" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="511.03" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="522.07" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="533.10" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="544.14" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="555.17" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="566.21" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="577.24" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="588.28" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="599.31" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="610.34" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="621.38" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="632.41" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="643.45" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="654.48" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="665.52" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="676.55" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="687.59" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="698.62" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="709.66" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="720.69" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="731.72" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="742.76" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="753.79" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="764.83" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="775.86" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="786.90" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="797.93" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="808.97" cy="296" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="185.52" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="196.55" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="207.59" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="218.62" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="229.66" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="240.69" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="251.72" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="262.76" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="273.79" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="284.83" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="295.86" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="306.90" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="317.93" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="328.97" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="340.00" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="351.03" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="362.07" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="373.10" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="384.14" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="395.17" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="406.21" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="417.24" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="428.28" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="439.31" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="450.34" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="461.38" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="472.41" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="483.45" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="494.48" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="505.52" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="516.55" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="527.59" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="538.62" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="549.66" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="560.69" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="571.72" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="582.76" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="593.79" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="604.83" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="615.86" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="626.90" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="637.93" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="648.97" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="660.00" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="671.03" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="682.07" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="693.10" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="704.14" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="715.17" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="726.21" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="737.24" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="748.28" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="759.31" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="770.34" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="781.38" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="792.41" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="803.45" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle><circle cx="814.48" cy="308" r="2.3" fill="#1F2E48" fill-opacity="0.55"></circle></g><path d="M184,318 C187,300 189,280 192,262 M200,318 C203,300 205,280 208,262 M216,318 C219,300 221,280 224,262 M232,318 C235,300 237,280 240,262 M248,318 C251,300 253,280 256,262 M264,318 C267,300 269,280 272,262 M280,318 C283,300 285,280 288,262 M296,318 C299,300 301,280 304,262 M312,318 C315,300 317,280 320,262 M328,318 C331,300 333,280 336,262 M344,318 C347,300 349,280 352,262 M360,318 C363,300 365,280 368,262 M376,318 C379,300 381,280 384,262 M392,318 C395,300 397,280 400,262 M408,318 C411,300 413,280 416,262 M424,318 C427,300 429,280 432,262 M440,318 C443,300 445,280 448,262 M456,318 C459,300 461,280 464,262 M472,318 C475,300 477,280 480,262 M488,318 C491,300 493,280 496,262 M504,318 C507,300 509,280 512,262 M520,318 C523,300 525,280 528,262 M536,318 C539,300 541,280 544,262 M552,318 C555,300 557,280 560,262 M568,318 C571,300 573,280 576,262 M584,318 C587,300 589,280 592,262 M600,318 C603,300 605,280 608,262 M616,318 C619,300 621,280 624,262 M632,318 C635,300 637,280 640,262 M648,318 C651,300 653,280 656,262 M664,318 C667,300 669,280 672,262 M680,318 C683,300 685,280 688,262 M696,318 C699,300 701,280 704,262 M712,318 C715,300 717,280 720,262 M728,318 C731,300 733,280 736,262 M744,318 C747,300 749,280 752,262 M760,318 C763,300 765,280 768,262 M776,318 C779,300 781,280 784,262 M792,318 C795,300 797,280 800,262 M808,318 C811,300 813,280 816,262 " fill="none" stroke="#B9763E" stroke-width="1" opacity=".14"></path><path id="coil" d="M192,262 C195,280 197,300 200,318 M208,262 C211,280 213,300 216,318 M224,262 C227,280 229,300 232,318 M240,262 C243,280 245,300 248,318 M256,262 C259,280 261,300 264,318 M272,262 C275,280 277,300 280,318 M288,262 C291,280 293,300 296,318 M304,262 C307,280 309,300 312,318 M320,262 C323,280 325,300 328,318 M336,262 C339,280 341,300 344,318 M352,262 C355,280 357,300 360,318 M368,262 C371,280 373,300 376,318 M384,262 C387,280 389,300 392,318 M400,262 C403,280 405,300 408,318 M416,262 C419,280 421,300 424,318 M432,262 C435,280 437,300 440,318 M448,262 C451,280 453,300 456,318 M464,262 C467,280 469,300 472,318 M480,262 C483,280 485,300 488,318 M496,262 C499,280 501,300 504,318 M512,262 C515,280 517,300 520,318 M528,262 C531,280 533,300 536,318 M544,262 C547,280 549,300 552,318 M560,262 C563,280 565,300 568,318 M576,262 C579,280 581,300 584,318 M592,262 C595,280 597,300 600,318 M608,262 C611,280 613,300 616,318 M624,262 C627,280 629,300 632,318 M640,262 C643,280 645,300 648,318 M656,262 C659,280 661,300 664,318 M672,262 C675,280 677,300 680,318 M688,262 C691,280 693,300 696,318 M704,262 C707,280 709,300 712,318 M720,262 C723,280 725,300 728,318 M736,262 C739,280 741,300 744,318 M752,262 C755,280 757,300 760,318 M768,262 C771,280 773,300 776,318 M784,262 C787,280 789,300 792,318 M800,262 C803,280 805,300 808,318 M816,262 C819,280 821,300 824,318 " fill="none" stroke="#B9763E" stroke-width="1.3" opacity=".3"></path><rect x="174" y="262" width="652" height="5" fill="#fff" opacity=".45"></rect><g stroke="#4B535D" stroke-width="1"><line x1="174" y1="333" x2="826" y2="333"></line><line x1="174" y1="327" x2="174" y2="339"></line><line x1="826" y1="327" x2="826" y2="339"></line></g><path d="M174,333 l8,-3.5 v7 z M826,333 l-8,-3.5 v7 z" fill="#4B535D"></path><rect x="466" y="325" width="68" height="16" fill="#BCC2CA"></rect><text x="500" y="337.5" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#2D333B">L = 0,51 м</text><rect x="20" y="370" width="960" height="282" rx="14" fill="url(#gPanel)" stroke="#121417"></rect><text x="40" y="396" class="eng sm" style="letter-spacing:.08em">ПРИБОРНЫЙ БЛОК</text><g id="kAmp" class="knob" tabindex="0" role="slider" aria-label="Ручка усил." aria-valuemin="0" aria-valuemax="100" style="cursor:ns-resize" aria-valuenow="36"><circle cx="150" cy="506" r="60" fill="transparent"></circle><line x1="120.3" y1="535.7" x2="116.1" y2="539.9" stroke="#C9CED6" stroke-width="1.4"></line><text x="109.7" y="550.3" text-anchor="middle" class="eng sm">0</text><line x1="114.2" y1="527.9" x2="111.6" y2="529.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="110.1" y1="519.0" x2="104.3" y2="520.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="108.1" y1="509.3" x2="105.1" y2="509.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="108.5" y1="499.4" x2="102.6" y2="498.5" stroke="#C9CED6" stroke-width="1.4"></line><text x="93.7" y="501.1" text-anchor="middle" class="eng sm">2</text><line x1="111.2" y1="489.9" x2="108.4" y2="488.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="116.0" y1="481.3" x2="111.2" y2="477.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="122.7" y1="474.1" x2="120.8" y2="471.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="130.9" y1="468.6" x2="128.2" y2="463.2" stroke="#C9CED6" stroke-width="1.4"></line><text x="124.1" y="459.2" text-anchor="middle" class="eng sm">4</text><line x1="140.2" y1="465.2" x2="139.5" y2="462.2" stroke="#C9CED6" stroke-width="0.8"></line><line x1="150.0" y1="464.0" x2="150.0" y2="458.0" stroke="#C9CED6" stroke-width="1.4"></line><line x1="159.8" y1="465.2" x2="160.5" y2="462.2" stroke="#C9CED6" stroke-width="0.8"></line><line x1="169.1" y1="468.6" x2="171.8" y2="463.2" stroke="#C9CED6" stroke-width="1.4"></line><text x="175.9" y="459.2" text-anchor="middle" class="eng sm">6</text><line x1="177.3" y1="474.1" x2="179.2" y2="471.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="184.0" y1="481.3" x2="188.8" y2="477.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="188.8" y1="489.9" x2="191.6" y2="488.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="191.5" y1="499.4" x2="197.4" y2="498.5" stroke="#C9CED6" stroke-width="1.4"></line><text x="206.3" y="501.1" text-anchor="middle" class="eng sm">8</text><line x1="191.9" y1="509.3" x2="194.9" y2="509.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="189.9" y1="519.0" x2="195.7" y2="520.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="185.8" y1="527.9" x2="188.4" y2="529.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="179.7" y1="535.7" x2="183.9" y2="539.9" stroke="#C9CED6" stroke-width="1.4"></line><text x="190.3" y="550.3" text-anchor="middle" class="eng sm">10</text><circle cx="150" cy="506" r="36" fill="#15181C"></circle><g class="rot" transform="rotate(-37.14 150 506)"><circle cx="150" cy="506" r="34" fill="url(#gKnob)" stroke="#07080A"></circle><line x1="150.0" y1="472.0" x2="150.0" y2="476.0" stroke="#454B53" stroke-width="1.3"></line><line x1="157.1" y1="472.7" x2="156.2" y2="476.7" stroke="#454B53" stroke-width="1.3"></line><line x1="163.8" y1="474.9" x2="162.2" y2="478.6" stroke="#454B53" stroke-width="1.3"></line><line x1="170.0" y1="478.5" x2="167.6" y2="481.7" stroke="#454B53" stroke-width="1.3"></line><line x1="175.3" y1="483.2" x2="172.3" y2="485.9" stroke="#454B53" stroke-width="1.3"></line><line x1="179.4" y1="489.0" x2="176.0" y2="491.0" stroke="#454B53" stroke-width="1.3"></line><line x1="182.3" y1="495.5" x2="178.5" y2="496.7" stroke="#454B53" stroke-width="1.3"></line><line x1="183.8" y1="502.4" x2="179.8" y2="502.9" stroke="#454B53" stroke-width="1.3"></line><line x1="183.8" y1="509.6" x2="179.8" y2="509.1" stroke="#454B53" stroke-width="1.3"></line><line x1="182.3" y1="516.5" x2="178.5" y2="515.3" stroke="#454B53" stroke-width="1.3"></line><line x1="179.4" y1="523.0" x2="176.0" y2="521.0" stroke="#454B53" stroke-width="1.3"></line><line x1="175.3" y1="528.8" x2="172.3" y2="526.1" stroke="#454B53" stroke-width="1.3"></line><line x1="170.0" y1="533.5" x2="167.6" y2="530.3" stroke="#454B53" stroke-width="1.3"></line><line x1="163.8" y1="537.1" x2="162.2" y2="533.4" stroke="#454B53" stroke-width="1.3"></line><line x1="157.1" y1="539.3" x2="156.2" y2="535.3" stroke="#454B53" stroke-width="1.3"></line><line x1="150.0" y1="540.0" x2="150.0" y2="536.0" stroke="#454B53" stroke-width="1.3"></line><line x1="142.9" y1="539.3" x2="143.8" y2="535.3" stroke="#454B53" stroke-width="1.3"></line><line x1="136.2" y1="537.1" x2="137.8" y2="533.4" stroke="#454B53" stroke-width="1.3"></line><line x1="130.0" y1="533.5" x2="132.4" y2="530.3" stroke="#454B53" stroke-width="1.3"></line><line x1="124.7" y1="528.8" x2="127.7" y2="526.1" stroke="#454B53" stroke-width="1.3"></line><line x1="120.6" y1="523.0" x2="124.0" y2="521.0" stroke="#454B53" stroke-width="1.3"></line><line x1="117.7" y1="516.5" x2="121.5" y2="515.3" stroke="#454B53" stroke-width="1.3"></line><line x1="116.2" y1="509.6" x2="120.2" y2="509.1" stroke="#454B53" stroke-width="1.3"></line><line x1="116.2" y1="502.4" x2="120.2" y2="502.9" stroke="#454B53" stroke-width="1.3"></line><line x1="117.7" y1="495.5" x2="121.5" y2="496.7" stroke="#454B53" stroke-width="1.3"></line><line x1="120.6" y1="489.0" x2="124.0" y2="491.0" stroke="#454B53" stroke-width="1.3"></line><line x1="124.7" y1="483.2" x2="127.7" y2="485.9" stroke="#454B53" stroke-width="1.3"></line><line x1="130.0" y1="478.5" x2="132.4" y2="481.7" stroke="#454B53" stroke-width="1.3"></line><line x1="136.2" y1="474.9" x2="137.8" y2="478.6" stroke="#454B53" stroke-width="1.3"></line><line x1="142.9" y1="472.7" x2="143.8" y2="476.7" stroke="#454B53" stroke-width="1.3"></line><circle cx="150" cy="506" r="24" fill="url(#gKnobCap)"></circle><circle cx="150" cy="483" r="3.2" fill="#F4F6F8"></circle></g></g><text x="150" y="594" text-anchor="middle" class="eng">УСИЛ.</text><rect x="290" y="418" width="370" height="200" rx="12" fill="none" stroke="#4A515A" stroke-dasharray="3 4"></rect><g id="kCoarse" class="knob" tabindex="0" role="slider" aria-label="Частота грубо" aria-valuemin="0" aria-valuemax="100" style="cursor:ns-resize" aria-valuenow="43"><circle cx="385" cy="506" r="60" fill="transparent"></circle><line x1="355.3" y1="535.7" x2="351.1" y2="539.9" stroke="#C9CED6" stroke-width="1.4"></line><text x="344.7" y="550.3" text-anchor="middle" class="eng sm">0</text><line x1="349.2" y1="527.9" x2="346.6" y2="529.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="345.1" y1="519.0" x2="339.3" y2="520.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="343.1" y1="509.3" x2="340.1" y2="509.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="343.5" y1="499.4" x2="337.6" y2="498.5" stroke="#C9CED6" stroke-width="1.4"></line><text x="328.7" y="501.1" text-anchor="middle" class="eng sm">2</text><line x1="346.2" y1="489.9" x2="343.4" y2="488.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="351.0" y1="481.3" x2="346.2" y2="477.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="357.7" y1="474.1" x2="355.8" y2="471.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="365.9" y1="468.6" x2="363.2" y2="463.2" stroke="#C9CED6" stroke-width="1.4"></line><text x="359.1" y="459.2" text-anchor="middle" class="eng sm">4</text><line x1="375.2" y1="465.2" x2="374.5" y2="462.2" stroke="#C9CED6" stroke-width="0.8"></line><line x1="385.0" y1="464.0" x2="385.0" y2="458.0" stroke="#C9CED6" stroke-width="1.4"></line><line x1="394.8" y1="465.2" x2="395.5" y2="462.2" stroke="#C9CED6" stroke-width="0.8"></line><line x1="404.1" y1="468.6" x2="406.8" y2="463.2" stroke="#C9CED6" stroke-width="1.4"></line><text x="410.9" y="459.2" text-anchor="middle" class="eng sm">6</text><line x1="412.3" y1="474.1" x2="414.2" y2="471.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="419.0" y1="481.3" x2="423.8" y2="477.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="423.8" y1="489.9" x2="426.6" y2="488.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="426.5" y1="499.4" x2="432.4" y2="498.5" stroke="#C9CED6" stroke-width="1.4"></line><text x="441.3" y="501.1" text-anchor="middle" class="eng sm">8</text><line x1="426.9" y1="509.3" x2="429.9" y2="509.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="424.9" y1="519.0" x2="430.7" y2="520.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="420.8" y1="527.9" x2="423.4" y2="529.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="414.7" y1="535.7" x2="418.9" y2="539.9" stroke="#C9CED6" stroke-width="1.4"></line><text x="425.3" y="550.3" text-anchor="middle" class="eng sm">10</text><circle cx="385" cy="506" r="36" fill="#15181C"></circle><g class="rot" transform="rotate(-19.90 385 506)"><circle cx="385" cy="506" r="34" fill="url(#gKnob)" stroke="#07080A"></circle><line x1="385.0" y1="472.0" x2="385.0" y2="476.0" stroke="#454B53" stroke-width="1.3"></line><line x1="392.1" y1="472.7" x2="391.2" y2="476.7" stroke="#454B53" stroke-width="1.3"></line><line x1="398.8" y1="474.9" x2="397.2" y2="478.6" stroke="#454B53" stroke-width="1.3"></line><line x1="405.0" y1="478.5" x2="402.6" y2="481.7" stroke="#454B53" stroke-width="1.3"></line><line x1="410.3" y1="483.2" x2="407.3" y2="485.9" stroke="#454B53" stroke-width="1.3"></line><line x1="414.4" y1="489.0" x2="411.0" y2="491.0" stroke="#454B53" stroke-width="1.3"></line><line x1="417.3" y1="495.5" x2="413.5" y2="496.7" stroke="#454B53" stroke-width="1.3"></line><line x1="418.8" y1="502.4" x2="414.8" y2="502.9" stroke="#454B53" stroke-width="1.3"></line><line x1="418.8" y1="509.6" x2="414.8" y2="509.1" stroke="#454B53" stroke-width="1.3"></line><line x1="417.3" y1="516.5" x2="413.5" y2="515.3" stroke="#454B53" stroke-width="1.3"></line><line x1="414.4" y1="523.0" x2="411.0" y2="521.0" stroke="#454B53" stroke-width="1.3"></line><line x1="410.3" y1="528.8" x2="407.3" y2="526.1" stroke="#454B53" stroke-width="1.3"></line><line x1="405.0" y1="533.5" x2="402.6" y2="530.3" stroke="#454B53" stroke-width="1.3"></line><line x1="398.8" y1="537.1" x2="397.2" y2="533.4" stroke="#454B53" stroke-width="1.3"></line><line x1="392.1" y1="539.3" x2="391.2" y2="535.3" stroke="#454B53" stroke-width="1.3"></line><line x1="385.0" y1="540.0" x2="385.0" y2="536.0" stroke="#454B53" stroke-width="1.3"></line><line x1="377.9" y1="539.3" x2="378.8" y2="535.3" stroke="#454B53" stroke-width="1.3"></line><line x1="371.2" y1="537.1" x2="372.8" y2="533.4" stroke="#454B53" stroke-width="1.3"></line><line x1="365.0" y1="533.5" x2="367.4" y2="530.3" stroke="#454B53" stroke-width="1.3"></line><line x1="359.7" y1="528.8" x2="362.7" y2="526.1" stroke="#454B53" stroke-width="1.3"></line><line x1="355.6" y1="523.0" x2="359.0" y2="521.0" stroke="#454B53" stroke-width="1.3"></line><line x1="352.7" y1="516.5" x2="356.5" y2="515.3" stroke="#454B53" stroke-width="1.3"></line><line x1="351.2" y1="509.6" x2="355.2" y2="509.1" stroke="#454B53" stroke-width="1.3"></line><line x1="351.2" y1="502.4" x2="355.2" y2="502.9" stroke="#454B53" stroke-width="1.3"></line><line x1="352.7" y1="495.5" x2="356.5" y2="496.7" stroke="#454B53" stroke-width="1.3"></line><line x1="355.6" y1="489.0" x2="359.0" y2="491.0" stroke="#454B53" stroke-width="1.3"></line><line x1="359.7" y1="483.2" x2="362.7" y2="485.9" stroke="#454B53" stroke-width="1.3"></line><line x1="365.0" y1="478.5" x2="367.4" y2="481.7" stroke="#454B53" stroke-width="1.3"></line><line x1="371.2" y1="474.9" x2="372.8" y2="478.6" stroke="#454B53" stroke-width="1.3"></line><line x1="377.9" y1="472.7" x2="378.8" y2="476.7" stroke="#454B53" stroke-width="1.3"></line><circle cx="385" cy="506" r="24" fill="url(#gKnobCap)"></circle><circle cx="385" cy="483" r="3.2" fill="#F4F6F8"></circle></g></g><g id="kFine" class="knob" tabindex="0" role="slider" aria-label="Частота точно" aria-valuemin="0" aria-valuemax="100" style="cursor:ns-resize" aria-valuenow="67"><circle cx="565" cy="506" r="54" fill="transparent"></circle><line x1="539.5" y1="531.5" x2="535.3" y2="535.7" stroke="#C9CED6" stroke-width="1.4"></line><text x="528.9" y="546.1" text-anchor="middle" class="eng sm">0</text><line x1="534.3" y1="524.8" x2="531.7" y2="526.4" stroke="#C9CED6" stroke-width="0.8"></line><line x1="530.8" y1="517.1" x2="525.1" y2="519.0" stroke="#C9CED6" stroke-width="1.4"></line><line x1="529.1" y1="508.8" x2="526.1" y2="509.1" stroke="#C9CED6" stroke-width="0.8"></line><line x1="529.4" y1="500.4" x2="523.5" y2="499.4" stroke="#C9CED6" stroke-width="1.4"></line><text x="514.6" y="502.0" text-anchor="middle" class="eng sm">2</text><line x1="531.7" y1="492.2" x2="529.0" y2="491.1" stroke="#C9CED6" stroke-width="0.8"></line><line x1="535.9" y1="484.8" x2="531.0" y2="481.3" stroke="#C9CED6" stroke-width="1.4"></line><line x1="541.6" y1="478.6" x2="539.7" y2="476.3" stroke="#C9CED6" stroke-width="0.8"></line><line x1="548.7" y1="473.9" x2="545.9" y2="468.6" stroke="#C9CED6" stroke-width="1.4"></line><text x="541.8" y="464.6" text-anchor="middle" class="eng sm">4</text><line x1="556.6" y1="471.0" x2="555.9" y2="468.1" stroke="#C9CED6" stroke-width="0.8"></line><line x1="565.0" y1="470.0" x2="565.0" y2="464.0" stroke="#C9CED6" stroke-width="1.4"></line><line x1="573.4" y1="471.0" x2="574.1" y2="468.1" stroke="#C9CED6" stroke-width="0.8"></line><line x1="581.3" y1="473.9" x2="584.1" y2="468.6" stroke="#C9CED6" stroke-width="1.4"></line><text x="588.2" y="464.6" text-anchor="middle" class="eng sm">6</text><line x1="588.4" y1="478.6" x2="590.3" y2="476.3" stroke="#C9CED6" stroke-width="0.8"></line><line x1="594.1" y1="484.8" x2="599.0" y2="481.3" stroke="#C9CED6" stroke-width="1.4"></line><line x1="598.3" y1="492.2" x2="601.0" y2="491.1" stroke="#C9CED6" stroke-width="0.8"></line><line x1="600.6" y1="500.4" x2="606.5" y2="499.4" stroke="#C9CED6" stroke-width="1.4"></line><text x="615.4" y="502.0" text-anchor="middle" class="eng sm">8</text><line x1="600.9" y1="508.8" x2="603.9" y2="509.1" stroke="#C9CED6" stroke-width="0.8"></line><line x1="599.2" y1="517.1" x2="604.9" y2="519.0" stroke="#C9CED6" stroke-width="1.4"></line><line x1="595.7" y1="524.8" x2="598.3" y2="526.4" stroke="#C9CED6" stroke-width="0.8"></line><line x1="590.5" y1="531.5" x2="594.7" y2="535.7" stroke="#C9CED6" stroke-width="1.4"></line><text x="601.1" y="546.1" text-anchor="middle" class="eng sm">10</text><circle cx="565" cy="506" r="30" fill="#15181C"></circle><g class="rot" transform="rotate(46.89 565 506)"><circle cx="565" cy="506" r="28" fill="url(#gKnob)" stroke="#07080A"></circle><line x1="565.0" y1="478.0" x2="565.0" y2="482.0" stroke="#454B53" stroke-width="1.3"></line><line x1="570.8" y1="478.6" x2="570.0" y2="482.5" stroke="#454B53" stroke-width="1.3"></line><line x1="576.4" y1="480.4" x2="574.8" y2="484.1" stroke="#454B53" stroke-width="1.3"></line><line x1="581.5" y1="483.3" x2="579.1" y2="486.6" stroke="#454B53" stroke-width="1.3"></line><line x1="585.8" y1="487.3" x2="582.8" y2="489.9" stroke="#454B53" stroke-width="1.3"></line><line x1="589.2" y1="492.0" x2="585.8" y2="494.0" stroke="#454B53" stroke-width="1.3"></line><line x1="591.6" y1="497.3" x2="587.8" y2="498.6" stroke="#454B53" stroke-width="1.3"></line><line x1="592.8" y1="503.1" x2="588.9" y2="503.5" stroke="#454B53" stroke-width="1.3"></line><line x1="592.8" y1="508.9" x2="588.9" y2="508.5" stroke="#454B53" stroke-width="1.3"></line><line x1="591.6" y1="514.7" x2="587.8" y2="513.4" stroke="#454B53" stroke-width="1.3"></line><line x1="589.2" y1="520.0" x2="585.8" y2="518.0" stroke="#454B53" stroke-width="1.3"></line><line x1="585.8" y1="524.7" x2="582.8" y2="522.1" stroke="#454B53" stroke-width="1.3"></line><line x1="581.5" y1="528.7" x2="579.1" y2="525.4" stroke="#454B53" stroke-width="1.3"></line><line x1="576.4" y1="531.6" x2="574.8" y2="527.9" stroke="#454B53" stroke-width="1.3"></line><line x1="570.8" y1="533.4" x2="570.0" y2="529.5" stroke="#454B53" stroke-width="1.3"></line><line x1="565.0" y1="534.0" x2="565.0" y2="530.0" stroke="#454B53" stroke-width="1.3"></line><line x1="559.2" y1="533.4" x2="560.0" y2="529.5" stroke="#454B53" stroke-width="1.3"></line><line x1="553.6" y1="531.6" x2="555.2" y2="527.9" stroke="#454B53" stroke-width="1.3"></line><line x1="548.5" y1="528.7" x2="550.9" y2="525.4" stroke="#454B53" stroke-width="1.3"></line><line x1="544.2" y1="524.7" x2="547.2" y2="522.1" stroke="#454B53" stroke-width="1.3"></line><line x1="540.8" y1="520.0" x2="544.2" y2="518.0" stroke="#454B53" stroke-width="1.3"></line><line x1="538.4" y1="514.7" x2="542.2" y2="513.4" stroke="#454B53" stroke-width="1.3"></line><line x1="537.2" y1="508.9" x2="541.1" y2="508.5" stroke="#454B53" stroke-width="1.3"></line><line x1="537.2" y1="503.1" x2="541.1" y2="503.5" stroke="#454B53" stroke-width="1.3"></line><line x1="538.4" y1="497.3" x2="542.2" y2="498.6" stroke="#454B53" stroke-width="1.3"></line><line x1="540.8" y1="492.0" x2="544.2" y2="494.0" stroke="#454B53" stroke-width="1.3"></line><line x1="544.2" y1="487.3" x2="547.2" y2="489.9" stroke="#454B53" stroke-width="1.3"></line><line x1="548.5" y1="483.3" x2="550.9" y2="486.6" stroke="#454B53" stroke-width="1.3"></line><line x1="553.6" y1="480.4" x2="555.2" y2="484.1" stroke="#454B53" stroke-width="1.3"></line><line x1="559.2" y1="478.6" x2="560.0" y2="482.5" stroke="#454B53" stroke-width="1.3"></line><circle cx="565" cy="506" r="18" fill="url(#gKnobCap)"></circle><circle cx="565" cy="489" r="3.2" fill="#F4F6F8"></circle></g></g><text x="385" y="594" text-anchor="middle" class="eng sm" style="font-size:12px">грубо</text><text x="565" y="594" text-anchor="middle" class="eng sm" style="font-size:12px">точно</text><text x="475" y="640" text-anchor="middle" class="eng" style="font-size:13px">ЧАСТОТА</text><g id="kHeat" class="knob" tabindex="0" role="slider" aria-label="Ручка нагрев" aria-valuemin="0" aria-valuemax="100" style="cursor:ns-resize" aria-valuenow="48"><circle cx="750" cy="506" r="60" fill="transparent"></circle><line x1="720.3" y1="535.7" x2="716.1" y2="539.9" stroke="#C9CED6" stroke-width="1.4"></line><text x="709.7" y="550.3" text-anchor="middle" class="eng sm">0</text><line x1="714.2" y1="527.9" x2="711.6" y2="529.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="710.1" y1="519.0" x2="704.3" y2="520.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="708.1" y1="509.3" x2="705.1" y2="509.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="708.5" y1="499.4" x2="702.6" y2="498.5" stroke="#C9CED6" stroke-width="1.4"></line><text x="693.7" y="501.1" text-anchor="middle" class="eng sm">2</text><line x1="711.2" y1="489.9" x2="708.4" y2="488.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="716.0" y1="481.3" x2="711.2" y2="477.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="722.7" y1="474.1" x2="720.8" y2="471.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="730.9" y1="468.6" x2="728.2" y2="463.2" stroke="#C9CED6" stroke-width="1.4"></line><text x="724.1" y="459.2" text-anchor="middle" class="eng sm">4</text><line x1="740.2" y1="465.2" x2="739.5" y2="462.2" stroke="#C9CED6" stroke-width="0.8"></line><line x1="750.0" y1="464.0" x2="750.0" y2="458.0" stroke="#C9CED6" stroke-width="1.4"></line><line x1="759.8" y1="465.2" x2="760.5" y2="462.2" stroke="#C9CED6" stroke-width="0.8"></line><line x1="769.1" y1="468.6" x2="771.8" y2="463.2" stroke="#C9CED6" stroke-width="1.4"></line><text x="775.9" y="459.2" text-anchor="middle" class="eng sm">6</text><line x1="777.3" y1="474.1" x2="779.2" y2="471.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="784.0" y1="481.3" x2="788.8" y2="477.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="788.8" y1="489.9" x2="791.6" y2="488.8" stroke="#C9CED6" stroke-width="0.8"></line><line x1="791.5" y1="499.4" x2="797.4" y2="498.5" stroke="#C9CED6" stroke-width="1.4"></line><text x="806.3" y="501.1" text-anchor="middle" class="eng sm">8</text><line x1="791.9" y1="509.3" x2="794.9" y2="509.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="789.9" y1="519.0" x2="795.7" y2="520.8" stroke="#C9CED6" stroke-width="1.4"></line><line x1="785.8" y1="527.9" x2="788.4" y2="529.5" stroke="#C9CED6" stroke-width="0.8"></line><line x1="779.7" y1="535.7" x2="783.9" y2="539.9" stroke="#C9CED6" stroke-width="1.4"></line><text x="790.3" y="550.3" text-anchor="middle" class="eng sm">10</text><circle cx="750" cy="506" r="36" fill="#15181C"></circle><g class="rot" transform="rotate(-4.94 750 506)"><circle cx="750" cy="506" r="34" fill="url(#gKnob)" stroke="#07080A"></circle><line x1="750.0" y1="472.0" x2="750.0" y2="476.0" stroke="#454B53" stroke-width="1.3"></line><line x1="757.1" y1="472.7" x2="756.2" y2="476.7" stroke="#454B53" stroke-width="1.3"></line><line x1="763.8" y1="474.9" x2="762.2" y2="478.6" stroke="#454B53" stroke-width="1.3"></line><line x1="770.0" y1="478.5" x2="767.6" y2="481.7" stroke="#454B53" stroke-width="1.3"></line><line x1="775.3" y1="483.2" x2="772.3" y2="485.9" stroke="#454B53" stroke-width="1.3"></line><line x1="779.4" y1="489.0" x2="776.0" y2="491.0" stroke="#454B53" stroke-width="1.3"></line><line x1="782.3" y1="495.5" x2="778.5" y2="496.7" stroke="#454B53" stroke-width="1.3"></line><line x1="783.8" y1="502.4" x2="779.8" y2="502.9" stroke="#454B53" stroke-width="1.3"></line><line x1="783.8" y1="509.6" x2="779.8" y2="509.1" stroke="#454B53" stroke-width="1.3"></line><line x1="782.3" y1="516.5" x2="778.5" y2="515.3" stroke="#454B53" stroke-width="1.3"></line><line x1="779.4" y1="523.0" x2="776.0" y2="521.0" stroke="#454B53" stroke-width="1.3"></line><line x1="775.3" y1="528.8" x2="772.3" y2="526.1" stroke="#454B53" stroke-width="1.3"></line><line x1="770.0" y1="533.5" x2="767.6" y2="530.3" stroke="#454B53" stroke-width="1.3"></line><line x1="763.8" y1="537.1" x2="762.2" y2="533.4" stroke="#454B53" stroke-width="1.3"></line><line x1="757.1" y1="539.3" x2="756.2" y2="535.3" stroke="#454B53" stroke-width="1.3"></line><line x1="750.0" y1="540.0" x2="750.0" y2="536.0" stroke="#454B53" stroke-width="1.3"></line><line x1="742.9" y1="539.3" x2="743.8" y2="535.3" stroke="#454B53" stroke-width="1.3"></line><line x1="736.2" y1="537.1" x2="737.8" y2="533.4" stroke="#454B53" stroke-width="1.3"></line><line x1="730.0" y1="533.5" x2="732.4" y2="530.3" stroke="#454B53" stroke-width="1.3"></line><line x1="724.7" y1="528.8" x2="727.7" y2="526.1" stroke="#454B53" stroke-width="1.3"></line><line x1="720.6" y1="523.0" x2="724.0" y2="521.0" stroke="#454B53" stroke-width="1.3"></line><line x1="717.7" y1="516.5" x2="721.5" y2="515.3" stroke="#454B53" stroke-width="1.3"></line><line x1="716.2" y1="509.6" x2="720.2" y2="509.1" stroke="#454B53" stroke-width="1.3"></line><line x1="716.2" y1="502.4" x2="720.2" y2="502.9" stroke="#454B53" stroke-width="1.3"></line><line x1="717.7" y1="495.5" x2="721.5" y2="496.7" stroke="#454B53" stroke-width="1.3"></line><line x1="720.6" y1="489.0" x2="724.0" y2="491.0" stroke="#454B53" stroke-width="1.3"></line><line x1="724.7" y1="483.2" x2="727.7" y2="485.9" stroke="#454B53" stroke-width="1.3"></line><line x1="730.0" y1="478.5" x2="732.4" y2="481.7" stroke="#454B53" stroke-width="1.3"></line><line x1="736.2" y1="474.9" x2="737.8" y2="478.6" stroke="#454B53" stroke-width="1.3"></line><line x1="742.9" y1="472.7" x2="743.8" y2="476.7" stroke="#454B53" stroke-width="1.3"></line><circle cx="750" cy="506" r="24" fill="url(#gKnobCap)"></circle><circle cx="750" cy="483" r="3.2" fill="#F4F6F8"></circle></g></g><text x="750" y="594" text-anchor="middle" class="eng">НАГРЕВ</text><circle id="heatLamp" cx="808" cy="444" r="6" fill="#3A1A12"></circle><g id="rock" class="rock" tabindex="0" role="switch" aria-label="Тумблер сеть" aria-checked="false" style="cursor:pointer">
+    <rect x="876" y="466" width="60" height="84" rx="8" fill="#14171A" stroke="#4A515A"></rect>
+    <rect id="rockKey" x="884" y="474" width="44" height="68" rx="6" fill="url(#gRock)" stroke="#0B0C0E"></rect>
+    <text x="906" y="496" text-anchor="middle" style="font:700 13px var(--font-ui);fill:#C9CED6">I</text>
+    <text x="906" y="532" text-anchor="middle" style="font:700 13px var(--font-ui);fill:#C9CED6">O</text>
+    <rect id="rockShade" x="884" y="474" width="44" height="34" rx="6" fill="#000" opacity=".35"></rect></g><circle id="lamp" cx="906" cy="442" r="10" fill="url(#gLampOff)" stroke="#0E0F11" stroke-width="1.5"></circle><circle id="lampGlow" cx="906" cy="442" r="22" fill="#FFB020" opacity="0"></circle><text x="906" y="594" text-anchor="middle" class="eng">СЕТЬ</text></svg>
+      </div>
+      <div class="controls">
+        <div class="ctl mob"><button class="btn small" id="fitBtn" aria-pressed="false">Вписать в экран</button><span class="note-chip rot-hint">Поверните телефон горизонтально, так установка видна целиком</span><span class="note-chip">Ручки крутятся движением пальца вверх и вниз прямо по ручке</span></div>
+        <div class="ctl">
+          <button class="btn small" id="plugBtn" aria-pressed="false">Вилка в розетку 220 В</button>
+        </div>
+        <div class="ctl">
+          <span class="lbl">Время</span>
+          <div class="seg" id="speedSeg" role="group" aria-label="Скорость времени">
+            <button data-speed="1" aria-pressed="true">×1</button>
+            <button data-speed="5" aria-pressed="false">×5</button>
+            <button data-speed="20" aria-pressed="false">×20</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <button class="btn small" id="soundBtn" aria-pressed="true">Звук генератора</button>
+          <button class="btn small" id="waveBtn" aria-pressed="true">Волна в трубке</button>
+        </div>
+        <span class="note-chip">Ручки крутятся перетаскиванием вверх и вниз или колёсиком, с Shift точнее</span>
+      </div>
+    </div>
+
+    <aside class="col">
+      <div class="panel">
+        <h3>Журнал отсчётов</h3>
+        <div class="rec-grid">
+          <label class="field">n<input id="recN" inputmode="numeric"></label>
+          <label class="field">ν, Гц<input id="recF" inputmode="decimal"></label>
+          <label class="field">t, °C<input id="recT" inputmode="decimal"></label>
+        </div>
+        <button class="btn primary" id="recBtn" style="width:100%;justify-content:center;margin-top:10px">Записать отсчёт</button>
+        <table class="jr">
+          <thead><tr><th>№</th><th>n</th><th>ν, Гц</th><th>t, °C</th><th></th></tr></thead>
+          <tbody id="jrBody"></tbody>
+        </table>
+        <div class="empty" id="jrEmpty">Пока пусто. Найдите резонанс и впишите показания частотомера и термометра</div>
+      </div>
+      <div class="panel">
+        <h3>Паспорт установки</h3>
+        <dl class="kv">
+          <dt>Длина трубки</dt><dd>L = 0,51 м</dd>
+          <dt>Частотомер</dt><dd>цена ед. 1 Гц</dd>
+          <dt>Термометр</dt><dd>цена ед. 0,1 °C</dd>
+          <dt>Нагрев</dt><dd>до 70 °C</dd>
+        </dl>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ РАСЧЁТ ============ -->
+<section class="view" id="v-calc" hidden>
+  <div class="calc">
+    <div class="col">
+      <div class="panel">
+        <h2>Таблица 1</h2>
+        <div class="tblwrap">
+          <table class="lab" style="min-width:520px">
+            <thead><tr><th>n</th><th>ν, Гц</th><th>λ, м</th><th>V, м/с</th><th>V<sub>ср</sub>, м/с</th></tr></thead>
+            <tbody id="t1Body"></tbody>
+          </table>
+        </div>
+        <div class="formula" style="margin-top:12px" id="errBox"></div>
+      </div>
+      <div class="panel">
+        <h2>Таблица 2</h2>
+        <div class="tblwrap">
+          <table class="lab" style="min-width:560px">
+            <tbody id="t2Body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>График V(t)</h2>
+        <svg id="graph" viewBox="0 0 640 330" aria-label="График зависимости скорости звука от температуры"></svg>
+        <div class="legend"><span><i style="border-color:var(--accent)"></i>опыт, по табл. 2</span><span><i style="border-color:#9AA2AD;border-top-style:dashed"></i>теория, V = 20√T</span></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <h2>Расчётные формулы</h2>
+        <div class="formula" id="fBox"></div>
+      </div>
+      <div class="panel">
+        <h2>Вывод</h2>
+        <textarea class="conc" id="conc" placeholder="Сравните опытную и теоретическую зависимость V от t и сделайте выводы"></textarea>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ТЕОРИЯ ============ -->
+<section class="view" id="v-theory" hidden>
+  <div class="theory">
+    <div class="panel prose">
+      <h2>Краткая теория</h2>
+      <h3>Механические волны</h3>
+      <p>Процесс распространения колебаний в упругой среде называется <b>механической волной</b>. Частицы среды, прилегающие к колеблющемуся телу, за счёт упругих связей передают колебания соседним, поэтому колебания распространяются с конечной скоростью. Если частицы колеблются вдоль направления распространения, волна <b>продольная</b>: в среде возникают чередующиеся сгущения и разрежения. Бегущая волна переносит энергию, но не переносит вещество.</p>
+      <p>Механические колебания, воспринимаемые органами слуха, называются <b>звуком</b>: слышимый диапазон от 16 Гц до 20 кГц. Ниже лежит инфразвук, выше ультразвук (20 кГц…1000 МГц) и гиперзвук. Звуковые волны продольные и в вакууме не распространяются.</p>
+      <h3>Скорость звука</h3>
+      <p>Скорость продольных волн зависит от свойств среды:</p>
+      <p style="text-align:center"><math display="block"><mi>V</mi><mo>=</mo><msqrt><mfrac><mi>E</mi><mi>ρ</mi></mfrac></msqrt><mspace width="1em"/><mtext>(1)</mtext></math></p>
+      <p>где E модуль Юнга, ρ плотность. В идеальном газе</p>
+      <p style="text-align:center"><math display="block"><mi>V</mi><mo>=</mo><msqrt><mfrac><mrow><mi>R</mi><mi>T</mi><mi>γ</mi></mrow><mi>μ</mi></mfrac></msqrt><mo>,</mo><mspace width="1.5em"/><mi>γ</mi><mo>=</mo><mfrac><msub><mi>C</mi><mi>P</mi></msub><msub><mi>C</mi><mi>V</mi></msub></mfrac><mspace width="1em"/><mtext>(2)</mtext></math></p>
+      <p>Для воздуха μ = 29 × 10<sup>−3</sup> кг/моль, γ = 1,4, и формула упрощается до V = 20√T (3). При 0 °C скорость звука около 332 м/с, при 15 °C около 340 м/с.</p>
+      <h3>Уравнение бегущей волны</h3>
+      <p>Если источник O колеблется по закону y = a sin ωt, то точка B на расстоянии x начнёт колебаться с запаздыванием τ = x/V:</p>
+      <p style="text-align:center"><math display="block"><mi>y</mi><mo>=</mo><mi>a</mi><mspace width="0.17em"/><mi>sin</mi><mspace width="0.17em"/><mi>ω</mi><mrow><mo>(</mo><mi>t</mi><mo>−</mo><mfrac><mi>x</mi><mi>V</mi></mfrac><mo>)</mo></mrow><mo>=</mo><mi>a</mi><mspace width="0.17em"/><mi>sin</mi><mspace width="0.17em"/><mo>(</mo><mi>ω</mi><mi>t</mi><mo>−</mo><mi>k</mi><mi>x</mi><mo>)</mo><mo>,</mo><mspace width="1.2em"/><mi>k</mi><mo>=</mo><mfrac><mrow><mn>2</mn><mi>π</mi></mrow><mi>λ</mi></mfrac></math></p>
+      <p>Длина волны λ = VT это расстояние, на которое колебание распространяется за период, или расстояние между ближайшими точками, колеблющимися в одинаковой фазе (5).</p>
+    </div>
+    <div class="panel prose">
+      <h3 style="margin-top:0">Интерференция и стоячая волна</h3>
+      <p>Когерентные волны при наложении усиливают друг друга в одних точках и ослабляют в других. Важный случай: наложение двух встречных волн одинаковой амплитуды, падающей и отражённой. Получается <b>стоячая волна</b>:</p>
+      <p style="text-align:center"><math display="block"><mi>y</mi><mo>=</mo><mn>2</mn><mi>a</mi><mspace width="0.17em"/><mi>cos</mi><mspace width="0.17em"/><mfrac><mrow><mn>2</mn><mi>π</mi><mi>x</mi></mrow><mi>λ</mi></mfrac><mspace width="0.17em"/><mi>sin</mi><mspace width="0.17em"/><mi>ω</mi><mi>t</mi></math></p>
+      <p>В узлах амплитуда равна нулю, x<sub>уз</sub> = ±(2k + 1)λ/4, в пучностях она максимальна и равна 2a, x<sub>пуч</sub> = ±mλ/2 (10). Узлы и пучности сдвинуты на четверть длины волны, по разные стороны от узла точки колеблются в противофазе, одностороннего переноса энергии нет.</p>
+      <figure>
+        <svg viewBox="0 0 520 150" style="width:100%;height:auto" aria-label="Стоячая волна: узлы и пучности">
+          <g fill="none" stroke-width="1.8">
+            <path id="sw1" stroke="var(--accent)"/>
+            <path id="sw2" stroke="#9AA2AD" stroke-dasharray="5 4"/>
+          </g>
+          <line x1="20" y1="70" x2="500" y2="70" stroke="#3A414B" stroke-width="1"/>
+          <g id="swMarks" font-family="Manrope" font-size="12" fill="#3A414B"></g>
+        </svg>
+        <figcaption>Стоячая волна: B узлы, A пучности, между соседними узлами λ/2</figcaption>
+      </figure>
+      <h3>Резонанс в трубке</h3>
+      <p>Если колебания возбуждаются в столбе воздуха длины L, закрытом с обоих торцов, волна многократно отражается от торцов. При отражении на каждом торце образуется узел смещения, и если</p>
+      <p style="text-align:center"><math display="block"><mi>L</mi><mo>=</mo><mi>n</mi><mfrac><mi>λ</mi><mn>2</mn></mfrac><mo>,</mo><mspace width="1em"/><mi>n</mi><mo>=</mo><mn>1</mn><mo>,</mo><mn>2</mn><mo>,</mo><mn>3</mn><mo>…</mo><mspace width="1em"/><mtext>(11)</mtext></math></p>
+      <p>отражённые волны усиливают друг друга, амплитуда резко возрастает, наступает резонанс.</p>
+      <h3>Установка ФПТ1-7</h3>
+      <p>В одном торце стеклянной трубки (L = 0,51 м) стоит телефон, питаемый звуковым генератором, в другом микрофон. Напряжение с микрофона подаётся на микроамперметр, по максимуму его показаний находят резонанс. Скорость звука</p>
+      <p style="text-align:center"><math display="block"><mi>V</mi><mo>=</mo><mi>λ</mi><mi>ν</mi><mo>=</mo><mfrac><mrow><mn>2</mn><mi>L</mi></mrow><mi>n</mi></mfrac><mi>ν</mi></math></p>
+      <p>Нагреватель позволяет поднять температуру воздуха в трубке до 70 °C и изучить зависимость V от t.</p>
+      <h3>Контрольные вопросы</h3>
+      <ol class="qlist">
+        <li>Какие волны называются упругими (механическими)?</li>
+        <li>Какие волны называются продольными и поперечными?</li>
+        <li>Какие волны могут распространяться в твёрдых телах? жидких? газообразных?</li>
+        <li>Какие характеристики волны вы знаете? Дайте им определение.</li>
+        <li>Что называют звуком, инфразвуком, ультразвуком и гиперзвуком?</li>
+        <li>От чего зависит скорость распространения механических колебаний?</li>
+        <li>Записать уравнение бегущей волны.</li>
+        <li>Какие волны называются стоячими?</li>
+        <li>Что называется интерференцией волн?</li>
+        <li>Как записывается уравнение стоячей волны?</li>
+        <li>Как рассчитать координаты узлов и пучностей в стоячей волне?</li>
+        <li>При каком условии возникает резонанс звуковых колебаний в стеклянной трубке?</li>
+        <li>Что показывает разность фаз колебаний двух точек волны?</li>
+        <li>Как зависит скорость звука от температуры?</li>
+        <li>Зависит ли скорость звука от частоты колебаний?</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+try { const nj = document.getElementById('nojs'); if (nj) nj.remove(); } catch (e) {}
+
+/* ---------- утилиты ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const fmt = (x, d) => (x == null || !isFinite(x)) ? '' : x.toFixed(d).replace('.', ',').replace(/^-/, '−');
+const num = s => {
+  if (s == null) return NaN;
+  const t = String(s).trim().replace(/\s/g, '').replace(',', '.').replace('−', '-');
+  return t === '' ? NaN : Number(t);
+};
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rnd = (a, b) => a + Math.random() * (b - a);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let toastTimer = 0;
+function toast(msg, ms = 3400) {
+  const el = $('#toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+const polar = (cx, cy, r, aDeg) => { const a = aDeg * Math.PI / 180; return [cx + r * Math.sin(a), cy - r * Math.cos(a)]; };
+function gauss() { let u = 0; while (!u) u = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random()); }
+
+/* ---------- скрытые параметры конкретного стенда ---------- */
+const KEY = 'fizlab5-zvuk-v1';
+const saved = store.get(KEY) || {};
+const hidden = saved.hidden || {
+  Leff: rnd(0.507, 0.516),          // акустическая длина трубки, м (телефон и микрофон чуть утоплены в торцы)
+  fcal: rnd(-0.004, 0.004),         // погрешность калибровки частотомера
+  toff: rnd(-0.4, 0.4),             // сдвиг нуля термометра, °C
+  hum: rnd(0.0006, 0.0028),         // влажность воздуха чуть ускоряет звук
+  room: rnd(22.3, 23.6),            // температура в лаборатории, °C
+  w: [0, 1, 2, 3, 4, 5, 6].map(() => rnd(0.88, 1.12))   // разброс высоты резонансных пиков
+};
+const data = Object.assign({
+  journal: [],
+  t1: [0, 1, 2, 3].map(() => ({ nu: '', lam: '', V: '' })),
+  vavg: '', dV: '', resV: '', resD: '',
+  t2: ['23', '30', '35', '40', '45', '50'].map(t => ({ t, V: '' })),
+  conc: ''
+}, saved.data || {});
+const flags = { look: false, minFirst: false, plug: false, power: false, gen: false, heat: false };   // отметки работы со стендом живут только в этом заходе
+function save() { store.set(KEY, { hidden, data }); }
+
+/* ---------- состояние установки ---------- */
+const st = {
+  plug: false, power: false,
+  amp: rnd(0.25, 0.6), coarse: rnd(0.3, 0.7), fine: rnd(0.3, 0.7), heat: rnd(0.15, 0.5),
+  Tair: hidden.room, Tsens: hidden.room,
+  I: 0, needle: 0, nv: 0, noise: 0, resp: 0, modes: [], t: 0
+};
+let speed = 1, soundOn = true, waveOn = true;
+
+const F_MIN = 100, F_MAX = 2000, F_FINE = 15;
+const fGen = () => F_MIN * Math.pow(F_MAX / F_MIN, st.coarse) + (st.fine - 0.5) * 2 * F_FINE;
+const vTrue = T => 331.3 * Math.sqrt(1 + T / 273.15) * (1 + hidden.hum);
+const sens = f => 1.08 * f / (f + 60) / Math.sqrt(1 + Math.pow(f / 1500, 2));   // телефон и микрофон
+
+function acoustics(f) {
+  const V = vTrue(st.Tair), out = [];
+  let s = 0.045;
+  for (let m = 1; m <= 6; m++) {
+    const fm = m * V / (2 * hidden.Leff), Q = 30 * Math.sqrt(m);
+    const x = 2 * Q * (f - fm) / fm;
+    const a = hidden.w[m] / Math.sqrt(1 + x * x);
+    out.push(a); s += a;
+  }
+  st.modes = out;
+  return s * sens(f);
+}
+
+/* ---------- построение установки (SVG) ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const P = (x, y) => `${x.toFixed(1)},${y.toFixed(1)}`;
+const SPAN = 50, PIV = { x: 500, y: 182 }, RS = 112;
+
+function knobSVG(id, cx, cy, label, r = 34) {
+  let s = `<g id="${id}" class="knob" tabindex="0" role="slider" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" style="cursor:ns-resize">`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${r + 26}" fill="transparent"/>`;
+  for (let k = 0; k <= 20; k++) {
+    const a = -135 + 270 * k / 20;
+    const [x0, y0] = polar(cx, cy, r + 8, a), [x1, y1] = polar(cx, cy, r + (k % 2 ? 11 : 14), a);
+    s += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="#C9CED6" stroke-width="${k % 2 ? .8 : 1.4}"/>`;
+    if (k % 4 === 0) { const [tx, ty] = polar(cx, cy, r + 23, a); s += `<text x="${tx.toFixed(1)}" y="${(ty + 4).toFixed(1)}" text-anchor="middle" class="eng sm">${k / 2}</text>`; }
+  }
+  s += `<circle cx="${cx}" cy="${cy}" r="${r + 2}" fill="#15181C"/>`;
+  s += `<g class="rot" transform="rotate(-135 ${cx} ${cy})">`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gKnob)" stroke="#07080A"/>`;
+  for (let k = 0; k < 30; k++) { const [x0, y0] = polar(cx, cy, r, k * 12), [x1, y1] = polar(cx, cy, r - 4, k * 12); s += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="#454B53" stroke-width="1.3"/>`; }
+  s += `<circle cx="${cx}" cy="${cy}" r="${r - 10}" fill="url(#gKnobCap)"/>`;
+  s += `<circle cx="${cx}" cy="${cy - r + 11}" r="3.2" fill="#F4F6F8"/>`;
+  s += `</g></g>`;
+  return s;
+}
+
+function buildStand() {
+  let s = `<defs>
+    <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9ECF0"/><stop offset="1" stop-color="#CDD2D9"/></linearGradient>
+    <linearGradient id="gRail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#AEB5BE"/><stop offset=".5" stop-color="#C6CCD3"/><stop offset="1" stop-color="#A3AAB4"/></linearGradient>
+    <linearGradient id="gPanel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A4049"/><stop offset="1" stop-color="#262A30"/></linearGradient>
+    <linearGradient id="gBezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#30353C"/><stop offset="1" stop-color="#16191D"/></linearGradient>
+    <linearGradient id="gFace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFBF6"/><stop offset="1" stop-color="#ECE8DB"/></linearGradient>
+    <linearGradient id="gLcd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C3CDB3"/><stop offset="1" stop-color="#A9B597"/></linearGradient>
+    <linearGradient id="gHouse" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2A2F35"/><stop offset=".5" stop-color="#4A515A"/><stop offset="1" stop-color="#22262B"/></linearGradient>
+    <linearGradient id="gGlass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EAF4FB" stop-opacity=".95"/><stop offset=".22" stop-color="#FFFFFF" stop-opacity=".9"/><stop offset=".6" stop-color="#D6E6F1" stop-opacity=".7"/><stop offset="1" stop-color="#B9CFDE" stop-opacity=".85"/></linearGradient>
+    <radialGradient id="gKnob" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#5A6069"/><stop offset=".6" stop-color="#1E2227"/><stop offset="1" stop-color="#0C0E10"/></radialGradient>
+    <radialGradient id="gKnobCap" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#8E959E"/><stop offset="1" stop-color="#3A4048"/></radialGradient>
+    <radialGradient id="gLampOn" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#FFF4C4"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#A35A00"/></radialGradient>
+    <radialGradient id="gLampOff" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#7A6440"/><stop offset="1" stop-color="#2E2414"/></radialGradient>
+    <linearGradient id="gRock" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C535C"/><stop offset="1" stop-color="#1B1E22"/></linearGradient>
+  </defs>
+  <style>
+    .eng{font:600 14px var(--font-ui);fill:#D5DAE1;letter-spacing:.04em}
+    .eng.sm{font-size:10.5px;letter-spacing:0;fill:#AEB5BF}
+    .eng.dk{fill:#3B424C}
+    .lab{font:700 12px var(--font-ui);fill:#4B535D;letter-spacing:.06em}
+    .mlab{font:600 14px var(--font-num);fill:#1A1A1A}
+    .led{font:46px var(--font-led);fill:#FF4B33}
+    .ledoff{font:46px var(--font-led);fill:#4A1E18}
+    .lcd{font:46px var(--font-led);fill:#1E2618}
+    .knob,.rock{touch-action:none}
+  </style>`;
+  // блок рабочего элемента
+  s += `<rect x="20" y="14" width="960" height="344" rx="14" fill="url(#gBody)" stroke="#AEB4BC"/>`;
+  s += `<text x="40" y="38" class="lab">БЛОК РАБОЧЕГО ЭЛЕМЕНТА</text>`;
+  // частотомер
+  s += `<g><rect x="56" y="52" width="270" height="128" rx="10" fill="url(#gBezel)"/>
+    <rect x="74" y="70" width="234" height="70" rx="5" fill="#120706"/>
+        <text id="fDisp" x="288" y="124" text-anchor="end" class="led"></text>
+    <text x="296" y="132" class="eng sm" fill="#FF7A66">Гц</text>
+    <text x="191" y="166" text-anchor="middle" class="eng sm">ЧАСТОТОМЕР</text></g>`;
+  // микроамперметр
+  s += `<g><rect x="366" y="40" width="268" height="168" rx="10" fill="url(#gBezel)"/>
+    <rect x="378" y="52" width="244" height="144" rx="5" fill="url(#gFace)"/>`;
+  let ticks = '';
+  for (let k = 0; k <= 50; k++) {
+    const a = -SPAN + 2 * SPAN * k / 50, len = k % 10 === 0 ? 15 : k % 5 === 0 ? 10 : 6;
+    const [x0, y0] = polar(PIV.x, PIV.y, RS, a), [x1, y1] = polar(PIV.x, PIV.y, RS - len, a);
+    ticks += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke-width="${k % 10 === 0 ? 1.5 : k % 5 === 0 ? 1.1 : .75}"/>`;
+  }
+  const [ax0, ay0] = polar(PIV.x, PIV.y, RS, -SPAN), [ax1, ay1] = polar(PIV.x, PIV.y, RS, SPAN);
+  s += `<g stroke="#1A1A1A">${ticks}<path d="M${P(ax0, ay0)} A${RS} ${RS} 0 0 1 ${P(ax1, ay1)}" fill="none" stroke-width="1"/></g>`;
+  for (let v = 0; v <= 100; v += 20) { const [x, y] = polar(PIV.x, PIV.y, RS + 13, -SPAN + 2 * SPAN * v / 100); s += `<text x="${x.toFixed(1)}" y="${(y + 5).toFixed(1)}" text-anchor="middle" class="mlab">${v}</text>`; }
+  s += `<text x="500" y="148" text-anchor="middle" style="font:700 22px var(--font-ui);fill:#1A1A1A">мкА</text>`;
+  s += `<text x="398" y="186" style="font:600 11px var(--font-num);fill:#333">1,5</text>`;
+  s += `<g id="needle" transform="rotate(${-SPAN} ${PIV.x} ${PIV.y})"><line x1="${PIV.x}" y1="${PIV.y + 8}" x2="${PIV.x}" y2="${PIV.y - RS - 2}" stroke="#B3261E" stroke-width="1.6"/></g>`;
+  s += `<path d="M${PIV.x - 26},196 A26 26 0 0 1 ${PIV.x + 26},196 Z" fill="#23272C"/>`;
+  s += `<text x="500" y="226" text-anchor="middle" class="lab">МИКРОАМПЕРМЕТР</text></g>`;
+  // термометр
+  s += `<g><rect x="674" y="52" width="270" height="128" rx="10" fill="url(#gBezel)"/>
+    <rect x="692" y="70" width="234" height="70" rx="5" fill="url(#gLcd)"/>
+    <text id="tDisp" x="878" y="124" text-anchor="end" class="lcd"></text>
+    <text x="884" y="104" style="font:600 18px var(--font-ui);fill:#1E2618">°C</text>
+    <text x="809" y="166" text-anchor="middle" class="eng sm">ТЕРМОМЕТР</text></g>`;
+  // трубка
+  s += `<rect x="36" y="240" width="928" height="108" rx="10" fill="url(#gRail)" stroke="#9AA2AC"/>`;
+  s += `<rect x="46" y="250" width="128" height="84" rx="8" fill="url(#gHouse)"/>`;
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) s += `<circle cx="${83 + i * 18}" cy="${268 + j * 15}" r="3" fill="#15181C"/>`;
+  s += `<text x="110" y="326" text-anchor="middle" class="eng sm">телефон</text>`;
+  s += `<rect x="826" y="250" width="128" height="84" rx="8" fill="url(#gHouse)"/>`;
+  s += `<circle cx="890" cy="286" r="18" fill="#15181C" stroke="#5A616A"/><circle cx="890" cy="286" r="9" fill="#2C3137"/>`;
+  s += `<text x="890" y="326" text-anchor="middle" class="eng sm">микрофон</text>`;
+  s += `<rect x="174" y="262" width="652" height="56" fill="url(#gGlass)" stroke="#7E93A6" stroke-width="1"/>`;
+  s += `<g id="press"></g><g id="air"></g>`;
+  // спираль нагревателя
+  let back = '', front = '';
+  for (let x = 184; x < 812; x += 16) {
+    back += `M${x},318 C${x + 3},300 ${x + 5},280 ${x + 8},262 `;
+    front += `M${x + 8},262 C${x + 11},280 ${x + 13},300 ${x + 16},318 `;
+  }
+  s += `<path d="${back}" fill="none" stroke="#B9763E" stroke-width="1" opacity=".14"/>`;
+  s += `<path id="coil" d="${front}" fill="none" stroke="#B9763E" stroke-width="1.3" opacity=".3"/>`;
+  s += `<rect x="174" y="262" width="652" height="5" fill="#fff" opacity=".45"/>`;
+  // размер L
+  s += `<g stroke="#4B535D" stroke-width="1"><line x1="174" y1="333" x2="826" y2="333"/><line x1="174" y1="327" x2="174" y2="339"/><line x1="826" y1="327" x2="826" y2="339"/></g>`;
+  s += `<path d="M174,333 l8,-3.5 v7 z M826,333 l-8,-3.5 v7 z" fill="#4B535D"/>`;
+  s += `<rect x="466" y="325" width="68" height="16" fill="#BCC2CA"/><text x="500" y="337.5" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#2D333B">L = 0,51 м</text>`;
+  // приборный блок
+  s += `<rect x="20" y="370" width="960" height="282" rx="14" fill="url(#gPanel)" stroke="#121417"/>`;
+  s += `<text x="40" y="396" class="eng sm" style="letter-spacing:.08em">ПРИБОРНЫЙ БЛОК</text>`;
+  s += knobSVG('kAmp', 150, 506, 'Ручка усил.');
+  s += `<text x="150" y="594" text-anchor="middle" class="eng">УСИЛ.</text>`;
+  s += `<rect x="290" y="418" width="370" height="200" rx="12" fill="none" stroke="#4A515A" stroke-dasharray="3 4"/>`;
+  s += knobSVG('kCoarse', 385, 506, 'Частота грубо');
+  s += knobSVG('kFine', 565, 506, 'Частота точно', 28);
+  s += `<text x="385" y="594" text-anchor="middle" class="eng sm" style="font-size:12px">грубо</text><text x="565" y="594" text-anchor="middle" class="eng sm" style="font-size:12px">точно</text>`;
+  s += `<text x="475" y="640" text-anchor="middle" class="eng" style="font-size:13px">ЧАСТОТА</text>`;
+  s += knobSVG('kHeat', 750, 506, 'Ручка нагрев');
+  s += `<text x="750" y="594" text-anchor="middle" class="eng">НАГРЕВ</text>`;
+  s += `<circle id="heatLamp" cx="808" cy="444" r="6" fill="#3A1A12"/>`;
+  // тумблер сеть (клавиша)
+  s += `<g id="rock" class="rock" tabindex="0" role="switch" aria-label="Тумблер сеть" aria-checked="false" style="cursor:pointer">
+    <rect x="876" y="466" width="60" height="84" rx="8" fill="#14171A" stroke="#4A515A"/>
+    <rect id="rockKey" x="884" y="474" width="44" height="68" rx="6" fill="url(#gRock)" stroke="#0B0C0E"/>
+    <text x="906" y="496" text-anchor="middle" style="font:700 13px var(--font-ui);fill:#C9CED6">I</text>
+    <text x="906" y="532" text-anchor="middle" style="font:700 13px var(--font-ui);fill:#C9CED6">O</text>
+    <rect id="rockShade" x="884" y="474" width="44" height="34" rx="6" fill="#000" opacity=".35"/></g>`;
+  s += `<circle id="lamp" cx="906" cy="442" r="10" fill="url(#gLampOff)" stroke="#0E0F11" stroke-width="1.5"/><circle id="lampGlow" cx="906" cy="442" r="22" fill="#FFB020" opacity="0"/>`;
+  s += `<text x="906" y="594" text-anchor="middle" class="eng">СЕТЬ</text>`;
+  $('#stand').innerHTML = s;
+
+  // полосы давления: где сгущение, там синее
+  const pg = $('#press');
+  for (let i = 0; i < PR_N; i++) {
+    const r = document.createElementNS(NS, 'rect');
+    r.setAttribute('x', (174 + i * 652 / PR_N).toFixed(2)); r.setAttribute('y', '264'); r.setAttribute('width', (652 / PR_N + .4).toFixed(2)); r.setAttribute('height', '52');
+    r.setAttribute('fill', '#1E4FD6'); r.setAttribute('fill-opacity', '0');
+    pg.appendChild(r); prBars.push({ r, x: (i + .5) * 652 / PR_N - 6 });
+  }
+  // частицы воздуха
+  const g = $('#air');
+  for (let r = 0; r < 4; r++) for (let i = 0; i < AIR_N; i++) {
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', AIR_X0 + i * AIR_DX); c.setAttribute('cy', 272 + r * 12); c.setAttribute('r', '2.3'); c.setAttribute('fill', '#1F2E48');
+    g.appendChild(c); airDots.push({ c, x0: AIR_X0 + i * AIR_DX + (r % 2) * AIR_DX / 2, i });
+  }
+}
+const AIR_N = 58, AIR_X0 = 180, AIR_DX = 640 / AIR_N;
+const airDots = [], prBars = [], PR_N = 80;
+buildStand();
+
+/* ---------- органы управления ---------- */
+const el = { amp: $('#kAmp'), coarse: $('#kCoarse'), fine: $('#kFine'), heat: $('#kHeat'), rock: $('#rock') };
+function renderControls() {
+  for (const k of ['amp', 'coarse', 'fine', 'heat']) {
+    const node = el[k], c = node.querySelector('circle');
+    const cx = +c.getAttribute('cx'), cy = +c.getAttribute('cy');
+    node.querySelector('.rot').setAttribute('transform', `rotate(${(-135 + 270 * st[k]).toFixed(2)} ${cx} ${cy})`);
+    node.setAttribute('aria-valuenow', String(Math.round(st[k] * 100)));
+  }
+  $('#rockShade').setAttribute('y', st.power ? '508' : '474');
+  el.rock.setAttribute('aria-checked', String(st.power));
+  const on = st.plug && st.power;
+  $('#lamp').setAttribute('fill', on ? 'url(#gLampOn)' : 'url(#gLampOff)');
+  $('#lampGlow').setAttribute('opacity', on ? '.28' : '0');
+  $('#heatLamp').setAttribute('fill', on && st.heat > 0.01 ? '#FF6A3D' : '#3A1A12');
+  $('#plugBtn').setAttribute('aria-pressed', String(st.plug));
+  $('#plugBtn').textContent = st.plug ? 'Вилка в розетке' : 'Вилка в розетку 220 В';
+}
+function touch() { if (!flags.look) { flags.look = true; save(); renderSteps(); } initAudio(); }
+let genWasOn = false;
+function setKnob(k, v) {
+  const before = st[k];
+  st[k] = clamp(v, 0, 1);
+  if (k === 'amp' && before < 0.005 && st[k] >= 0.005 && st.power && st.plug) { click(1700); }
+  renderControls(); trackFlags();
+}
+for (const k of ['amp', 'coarse', 'fine', 'heat']) {
+  const node = el[k];
+  let drag = null;
+  node.addEventListener('pointerdown', e => {
+    e.preventDefault(); touch(); node.focus({ preventScroll: true });
+    try { node.setPointerCapture(e.pointerId); } catch (err) {}
+    drag = { y: e.clientY, v: st[k] };
+  });
+  node.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const sensK = e.shiftKey ? 1 / 1500 : 1 / 260;
+    setKnob(k, drag.v + (drag.y - e.clientY) * sensK);
+  });
+  const end = () => { drag = null; };
+  node.addEventListener('pointerup', end); node.addEventListener('pointercancel', end); node.addEventListener('lostpointercapture', end);
+  node.addEventListener('wheel', e => { e.preventDefault(); touch(); setKnob(k, st[k] - Math.sign(e.deltaY) * (e.shiftKey ? 0.0008 : 0.006)); }, { passive: false });
+  node.addEventListener('keydown', e => {
+    const d = { ArrowUp: .002, ArrowRight: .002, ArrowDown: -.002, ArrowLeft: -.002, PageUp: .03, PageDown: -.03 };
+    if (e.key in d) { e.preventDefault(); touch(); setKnob(k, st[k] + d[e.key] * (e.shiftKey ? .25 : 1)); }
+    if (e.key === 'Home') { e.preventDefault(); setKnob(k, 0); }
+    if (e.key === 'End') { e.preventDefault(); setKnob(k, 1); }
+  });
+}
+function togglePower() {
+  touch();
+  st.power = !st.power; click(st.power ? 1200 : 900, .04);
+  if (st.power && st.plug) {
+    const atMin = ['amp', 'coarse', 'fine', 'heat'].every(k => st[k] < 0.01);
+    if (!flags.minFirst) { if (atMin) flags.minFirst = true; else toast('Ручки не выведены на минимум (п. 2). Так установку не включают'); }
+    flags.power = true; save();
+  } else if (st.power && !st.plug) toast('Лампочка не горит: вилка не в розетке (п. 3)');
+  renderControls(); renderSteps();
+}
+el.rock.addEventListener('click', togglePower);
+el.rock.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePower(); } });
+$('#plugBtn').addEventListener('click', () => {
+  touch(); st.plug = !st.plug;
+  if (st.plug) { flags.plug = true; save(); }
+  renderControls(); renderSteps();
+});
+$$('#speedSeg button').forEach(b => b.addEventListener('click', () => {
+  speed = +b.dataset.speed;
+  $$('#speedSeg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+}));
+$('#soundBtn').addEventListener('click', e => { soundOn = !soundOn; e.currentTarget.setAttribute('aria-pressed', String(soundOn)); initAudio(); });
+$('#waveBtn').addEventListener('click', e => { waveOn = !waveOn; e.currentTarget.setAttribute('aria-pressed', String(waveOn)); $('#air').style.display = waveOn ? '' : 'none'; $('#press').style.display = waveOn ? '' : 'none'; });
+
+/* ---------- звук ---------- */
+let actx = null, osc = null, og = null;
+function initAudio() {
+  if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
+  try {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    osc = actx.createOscillator(); og = actx.createGain();
+    osc.type = 'sine'; osc.frequency.value = 440; og.gain.value = 0;
+    osc.connect(og).connect(actx.destination); osc.start();
+  } catch (e) { actx = null; }
+}
+function click(freq = 1400, dur = .03) {
+  try {
+    if (!actx) return;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.05, actx.currentTime + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+    o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + dur + .01);
+  } catch (e) {}
+}
+function updateAudio(f, genOn) {
+  if (!actx || !osc) return;
+  const now = actx.currentTime;
+  const vol = (soundOn && genOn && currentTab === 'setup') ? Math.min(0.07, 0.05 * Math.pow(st.amp, 1.3) * (0.18 + 0.95 * Math.min(1.3, st.resp))) : 0;
+  osc.frequency.setTargetAtTime(f, now, 0.015);
+  og.gain.setTargetAtTime(vol, now, 0.06);
+}
+
+/* ---------- физика ---------- */
+let pegWarned = false, hotWarned = false;
+function physics(dt) {
+  const on = st.plug && st.power;
+  // нагрев воздуха в трубке
+  const Tss = hidden.room + (on ? 52 * st.heat : 0);
+  st.Tair += (Tss - st.Tair) * (1 - Math.exp(-dt / 260));
+  st.Tsens += (st.Tair - st.Tsens) * (1 - Math.exp(-dt / 6));
+  // резонанс и микроамперметр
+  const f = fGen(), gen = on && st.amp >= 0.005;
+  st.resp = gen ? acoustics(f) : 0;
+  st.noise = st.noise * 0.96 + 0.04 * gauss() * 2.2;
+  const I = gen ? 112 * Math.pow(st.amp, 1.15) * st.resp + st.noise * st.amp : 0;
+  st.I = I;
+}
+function needleStep(dt) {
+  const target = clamp(st.I, -2, 104);
+  const wn = 2 * Math.PI * 1.4, z = .78;
+  const acc = wn * wn * (target - st.needle) - 2 * z * wn * st.nv;
+  st.nv += acc * dt; st.needle += st.nv * dt;
+  if (st.needle > 104) { st.needle = 104; st.nv = -st.nv * .2; }
+  if (st.needle < -2) { st.needle = -2; st.nv = -st.nv * .2; }
+}
+
+/* ---------- отрисовка ---------- */
+function renderDisplays() {
+  const on = st.plug && st.power;
+  const f = fGen();
+  $('#fDisp').textContent = on ? String(Math.round(f * (1 + hidden.fcal))) : '';
+  $('#tDisp').textContent = on ? fmt(Math.round((st.Tsens + hidden.toff) * 10) / 10, 1) : '';
+  $('#needle').setAttribute('transform', `rotate(${(-SPAN + 2 * SPAN * st.needle / 100).toFixed(3)} ${PIV.x} ${PIV.y})`);
+  $('#coil').setAttribute('stroke', on && st.heat > 0.01 ? `rgb(${Math.round(185 + 60 * st.heat)},${Math.round(118 - 40 * st.heat)},62)` : '#B9763E');
+  if (st.needle > 101 && !pegWarned) { pegWarned = true; toast('Стрелка зашкаливает. Уменьшите усиление: при резонансе она должна отклоняться максимально, но не до конца шкалы'); }
+  if (st.needle < 80) pegWarned = false;
+  if (st.Tair > 70.5 && !hotWarned) { hotWarned = true; toast('Выше 70 °C установку не нагревают. Уменьшите нагрев'); }
+  if (st.Tair < 68) hotWarned = false;
+}
+let visPhase = 0;
+function renderAir(rdt) {
+  if (!waveOn) return;
+  visPhase += rdt * 2 * Math.PI * 0.9;
+  const on = st.plug && st.power && st.amp >= 0.005;
+  const k = on ? 16 * Math.min(1.2, Math.pow(st.amp, 0.7)) : 0;
+  const sn = Math.sin(visPhase);
+  const L = 640;
+  const disp = x => {
+    let y = 0;
+    for (let m = 1; m <= st.modes.length; m++) y += st.modes[m - 1] * Math.sin(m * Math.PI * x / L);
+    return y;
+  };
+  for (const d of airDots) {
+    const x = d.x0 - AIR_X0;
+    const u = on ? k * sn * disp(x) : 0;
+    const du = on ? k * sn * (disp(x + 2) - disp(x - 2)) / 4 : 0;
+    d.c.setAttribute('cx', (d.x0 + u).toFixed(2));
+    d.c.setAttribute('fill-opacity', clamp(0.55 - du * 1.6, 0.12, 1).toFixed(2));
+  }
+  for (const b of prBars) {
+    const du = on ? k * sn * (disp(b.x + 2) - disp(b.x - 2)) / 4 : 0;
+    b.r.setAttribute('fill-opacity', clamp(-du * 2.6, 0, 0.5).toFixed(3));
+  }
+}
+
+/* ---------- журнал ---------- */
+function renderJournal() {
+  $('#jrBody').innerHTML = data.journal.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.n)}</td><td>${esc(r.f)}</td><td>${esc(r.t)}</td><td><button class="x" data-del="${i}" aria-label="Удалить отсчёт">×</button></td></tr>`).join('');
+  $('#jrEmpty').hidden = data.journal.length > 0;
+}
+$('#jrBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  data.journal.splice(+b.dataset.del, 1); save(); renderJournal(); renderSteps();
+});
+$('#recBtn').addEventListener('click', () => {
+  const n = num($('#recN').value), f = num($('#recF').value), t = num($('#recT').value);
+  if (!(n >= 1) || Math.round(n) !== n) { toast('Впишите номер резонанса n целым числом'); return; }
+  if (!(f > 0)) { toast('Впишите частоту ν по частотомеру'); return; }
+  if (!(t > 0)) { toast('Впишите температуру t по термометру'); return; }
+  data.journal.push({ n: $('#recN').value.trim(), f: $('#recF').value.trim(), t: $('#recT').value.trim() });
+  $('#recF').value = ''; $('#recN').value = String(Math.min(4, n + 1));
+  save(); renderJournal(); renderSteps();
+  toast(`Записано: n = ${n}, ν = ${fmt(f, 0)} Гц`, 2000);
+});
+
+/* ---------- таблицы и расчёт ---------- */
+const inp = (path, val, aria, cls = '') => `<input data-p="${path}" value="${esc(val)}" inputmode="decimal" aria-label="${aria}" class="${cls}">`;
+function renderCalc() {
+  let h = '';
+  for (let i = 0; i < 4; i++) {
+    const r = data.t1[i];
+    h += `<tr><td>${i + 1}</td><td>${inp(`t1.${i}.nu`, r.nu, `ν${i + 1}`)}</td><td>${inp(`t1.${i}.lam`, r.lam, `λ${i + 1}`)}</td><td>${inp(`t1.${i}.V`, r.V, `V${i + 1}`)}</td>${i === 0 ? `<td rowspan="4">${inp('vavg', data.vavg, 'Vср')}</td>` : ''}</tr>`;
+  }
+  $('#t1Body').innerHTML = h;
+  $('#errBox').innerHTML = `
+    <div class="fline"><span class="cap">Средняя абсолютная погрешность</span><math displaystyle="true"><mi>Δ</mi><mi>V</mi><mo>=</mo><mfrac><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mo>|</mo><msub><mi>V</mi><mi>ср</mi></msub><mo>−</mo><msub><mi>V</mi><mi>i</mi></msub><mo>|</mo></mrow><mn>4</mn></mfrac><mo>=</mo></math>${inp('dV', data.dV, 'ΔV')}<span class="muted tiny">м/с</span></div>
+    <div class="fline"><span class="cap">Результат</span><math><mi>V</mi><mo>=</mo></math>${inp('resV', data.resV, 'V результат', 'w')}<math><mo>±</mo></math>${inp('resD', data.resD, 'ΔV результат', 'w')}<span class="muted tiny">м/с</span></div>`;
+  let h2 = '<tr><th style="width:90px">t, °C</th>';
+  for (let i = 0; i < 6; i++) h2 += `<td>${inp(`t2.${i}.t`, data.t2[i].t, `t${i + 1}`)}</td>`;
+  h2 += '</tr><tr><th>V, м/с</th>';
+  for (let i = 0; i < 6; i++) h2 += `<td>${inp(`t2.${i}.V`, data.t2[i].V, `V при t${i + 1}`)}</td>`;
+  $('#t2Body').innerHTML = h2 + '</tr>';
+  $('#fBox').innerHTML = `
+    <div class="fline"><span class="cap">Длина волны при n-м резонансе, L = 0,51 м</span><math display="block"><msub><mi>λ</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><mn>2</mn><mi>L</mi></mrow><mi>n</mi></mfrac></math></div>
+    <div class="fline"><span class="cap">Скорость звука</span><math display="block"><msub><mi>V</mi><mi>n</mi></msub><mo>=</mo><msub><mi>λ</mi><mi>n</mi></msub><msub><mi>ν</mi><mi>n</mi></msub></math></div>
+    <div class="fline"><span class="cap">Среднее значение</span><math display="block"><msub><mi>V</mi><mi>ср</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>V</mi><mn>1</mn></msub><mo>+</mo><msub><mi>V</mi><mn>2</mn></msub><mo>+</mo><msub><mi>V</mi><mn>3</mn></msub><mo>+</mo><msub><mi>V</mi><mn>4</mn></msub></mrow><mn>4</mn></mfrac></math></div>
+    <div class="fline"><span class="cap">Теория для воздуха, формулы (2) и (3), T = t + 273</span><math display="block"><mi>V</mi><mo>=</mo><msqrt><mfrac><mrow><mi>R</mi><mi>T</mi><mi>γ</mi></mrow><mi>μ</mi></mfrac></msqrt><mo>=</mo><mn>20</mn><msqrt><mi>T</mi></msqrt></math></div>`;
+  $('#conc').value = data.conc;
+  renderGraph();
+}
+function setPath(path, v) {
+  const k = path.split('.');
+  if (k.length === 3) data[k[0]][+k[1]][k[2]] = v; else data[k[0]] = v;
+}
+$('#v-calc').addEventListener('input', e => {
+  if (e.target.id === 'conc') { data.conc = e.target.value; save(); renderSteps(); return; }
+  const p = e.target.dataset && e.target.dataset.p; if (!p) return;
+  setPath(p, e.target.value); save(); renderSteps();
+  if (p.startsWith('t2.')) renderGraph();
+});
+let resetArm = 0;
+$('#restartBtn').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if (performance.now() - resetArm > 3000) { resetArm = performance.now(); b.textContent = 'Точно? Нажмите ещё раз'; setTimeout(() => { b.textContent = 'Начать заново'; }, 3000); return; }
+  try { localStorage.removeItem(KEY); } catch (err) {}
+  location.hash = ''; location.reload();
+});
+
+/* ---------- график ---------- */
+function renderGraph() {
+  const W = 640, H = 330, m = { l: 58, r: 18, t: 16, b: 46 };
+  const pts = data.t2.map(r => ({ t: num(r.t), V: num(r.V) })).filter(p => isFinite(p.t) && isFinite(p.V)).sort((a, b) => a.t - b.t);
+  const x0 = 20, x1 = 55;
+  const th = t => 20 * Math.sqrt(t + 273);
+  let lo = th(x0), hi = th(x1);
+  for (const p of pts) { lo = Math.min(lo, p.V); hi = Math.max(hi, p.V); }
+  const y0 = Math.floor((lo - 2) / 5) * 5, y1 = Math.ceil((hi + 2) / 5) * 5;
+  const X = t => m.l + (W - m.l - m.r) * (t - x0) / (x1 - x0);
+  const Y = v => H - m.b - (H - m.t - m.b) * (v - y0) / (y1 - y0);
+  let s = '';
+  for (let t = x0; t <= x1; t += 5) s += `<line x1="${X(t)}" y1="${m.t}" x2="${X(t)}" y2="${H - m.b}" stroke="#E6E9EE"/><text x="${X(t)}" y="${H - m.b + 18}" text-anchor="middle" font-size="12" font-family="IBM Plex Mono" fill="#5E6672">${t}</text>`;
+  const step = (y1 - y0) > 30 ? 10 : 5;
+  for (let v = y0; v <= y1; v += step) s += `<line x1="${m.l}" y1="${Y(v)}" x2="${W - m.r}" y2="${Y(v)}" stroke="#E6E9EE"/><text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="12" font-family="IBM Plex Mono" fill="#5E6672">${v}</text>`;
+  s += `<line x1="${m.l}" y1="${H - m.b}" x2="${W - m.r}" y2="${H - m.b}" stroke="#3A414B"/><line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${H - m.b}" stroke="#3A414B"/>`;
+  s += `<text x="${W - m.r}" y="${H - 8}" text-anchor="end" font-size="13" font-family="Manrope" font-style="italic" fill="#151A21">t, °C</text>`;
+  s += `<text x="14" y="${m.t + 4}" font-size="13" font-family="Manrope" font-style="italic" fill="#151A21" transform="rotate(-90 14 ${m.t + 4})" text-anchor="end">V, м/с</text>`;
+  let d = '';
+  for (let t = x0; t <= x1 + 1e-9; t += 0.5) d += (d ? 'L' : 'M') + X(t).toFixed(1) + ',' + Y(th(t)).toFixed(1);
+  s += `<path d="${d}" fill="none" stroke="#9AA2AD" stroke-width="2" stroke-dasharray="6 5"/>`;
+  if (pts.length > 1) s += `<path d="${pts.map((p, i) => (i ? 'L' : 'M') + X(p.t).toFixed(1) + ',' + Y(p.V).toFixed(1)).join('')}" fill="none" stroke="#1E4FD6" stroke-width="2.2"/>`;
+  for (const p of pts) s += `<circle cx="${X(p.t).toFixed(1)}" cy="${Y(p.V).toFixed(1)}" r="4.5" fill="#1E4FD6" stroke="#fff" stroke-width="1.5"/>`;
+  if (!pts.length) s += `<text x="${(m.l + W - m.r) / 2}" y="${(m.t + H - m.b) / 2 - 20}" text-anchor="middle" font-size="13" font-family="Manrope" fill="#5E6672">Заполните таблицу 2, и здесь появятся опытные точки</text>`;
+  $('#graph').innerHTML = s;
+}
+
+/* ---------- рисунок стоячей волны в теории ---------- */
+(() => {
+  let a = '', b = '';
+  for (let x = 20; x <= 500; x += 2) {
+    const ph = 2 * Math.PI * (x - 20) / 240 + Math.PI / 2;
+    a += (a ? 'L' : 'M') + x + ',' + (70 - 48 * Math.cos(ph)).toFixed(1);
+    b += (b ? 'L' : 'M') + x + ',' + (70 + 48 * Math.cos(ph)).toFixed(1);
+  }
+  $('#sw1').setAttribute('d', a); $('#sw2').setAttribute('d', b);
+  let m = '';
+  for (let k = 0; k < 5; k++) { const x = 20 + k * 120; m += `<circle cx="${x}" cy="70" r="3.5" fill="#3A414B"/><text x="${clamp(x + 6, 24, 486)}" y="88">B${k + 1}</text>`; }
+  for (let k = 0; k < 4; k++) { const x = 80 + k * 120; m += `<line x1="${x}" y1="22" x2="${x}" y2="118" stroke="#C3C9D2" stroke-dasharray="3 3"/><text x="${x - 8}" y="140">A${k + 1}</text>`; }
+  $('#swMarks').innerHTML = m;
+})();
+
+/* ---------- ход работы ---------- */
+function trackFlags() {
+  let ch = false;
+  const on = st.plug && st.power;
+  if (on && st.amp >= 0.005 && !flags.gen) { flags.gen = true; ch = true; }
+  if (on && st.heat > 0.05 && st.Tair > hidden.room + 3 && !flags.heat) { flags.heat = true; ch = true; }
+  if (ch) { save(); renderSteps(); }
+}
+function renderSteps() {
+  const ns = data.journal.map(r => num(r.n));
+  const f1 = (i, k) => String(data.t1[i][k]).trim() !== '';
+  const t2n = data.t2.filter(r => String(r.V).trim()).length;
+  const done = [
+    flags.look, flags.minFirst, flags.plug, flags.power, flags.gen,
+    ns.includes(1), f1(0, 'lam'), f1(0, 'V'),
+    [2, 3, 4].every(n => ns.includes(n)),
+    [1, 2, 3].every(i => f1(i, 'lam') && f1(i, 'V')),
+    String(data.vavg).trim() !== '',
+    [0, 1, 2, 3].every(i => f1(i, 'nu') && f1(i, 'lam') && f1(i, 'V')),
+    String(data.dV).trim() !== '' && String(data.resV).trim() !== '',
+    t2n >= 6, t2n >= 3, String(data.conc).trim().length > 20
+  ];
+  $$('#steps li').forEach((li, i) => li.classList.toggle('done', !!done[i]));
+}
+
+/* ---------- вкладки ---------- */
+let currentTab = 'setup';
+function showTab(name) {
+  if (!['setup', 'calc', 'theory'].includes(name)) name = 'setup';
+  currentTab = name;
+  $$('.view').forEach(v => v.hidden = v.id !== 'v-' + name);
+  $$('.tabs a').forEach(a => a.setAttribute('aria-current', a.dataset.tab === name ? 'page' : 'false'));
+  if (name === 'calc') renderCalc();
+}
+$$('.tabs a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); history.replaceState(null, '', '#' + a.dataset.tab); showTab(a.dataset.tab); }));
+window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+function renderAll() { renderJournal(); renderSteps(); if (currentTab === 'calc') renderCalc(); }
+
+/* ---------- главный цикл ---------- */
+let last = performance.now(), slow = 0;
+function frame(ts) {
+  const rdt = Math.min(0.05, Math.max(0, (ts - last) / 1000)); last = ts;
+  try {
+    let left = rdt * speed;
+    while (left > 1e-6) { const h = Math.min(1 / 120, left); physics(h); st.t += h; left -= h; }
+    let nl = rdt;
+    while (nl > 1e-6) { const h = Math.min(1 / 240, nl); needleStep(h); nl -= h; }
+    if (currentTab === 'setup') { renderDisplays(); renderAir(rdt); }
+    updateAudio(fGen(), st.plug && st.power && st.amp >= 0.005);
+    slow += rdt; if (slow > .3) { slow = 0; trackFlags(); }
+  } catch (err) { console.error(err); }
+  requestAnimationFrame(frame);
+}
+document.addEventListener('pointerdown', () => initAudio(), { once: true });
+
+renderControls();
+showTab(location.hash.slice(1) || 'setup');
+renderAll();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+
+/* ---------- телефон ---------- */
+$('#stand').addEventListener('touchstart', e => { if (e.target.closest && e.target.closest('.knob, .drag')) e.preventDefault(); }, { passive: false });
+try { if (window.matchMedia('(max-width:860px)').matches) { const sb = document.querySelector('details.stepsbox'); if (sb) sb.open = false; } } catch (e) {}
+(() => {
+  const b = document.getElementById('fitBtn'); if (!b) return;
+  b.addEventListener('click', () => {
+    const w = document.querySelector('.stand-wrap'), v = !w.classList.contains('fit');
+    w.classList.toggle('fit', v); b.setAttribute('aria-pressed', String(v)); b.textContent = v ? 'Обычный размер' : 'Вписать в экран';
+  });
+})();
+document.addEventListener('touchend', () => initAudio(), { passive: true });
+document.addEventListener('click', () => initAudio());
+window.__lab = { st, hidden, data, flags, fGen, vTrue, acoustics, setKnob, togglePower };   // для автоматической проверки
+})();
+</script>
+</body>
+</html>

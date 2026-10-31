@@ -1,0 +1,1219 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Удельное сопротивление нихрома</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Рабочее место: слева ход работы, в центре колонка с проволокой, FPM-01 и микрометр, справа журнал */
+:root{
+  --bg:#F1F4F2; --surface:#FFFFFF; --surface-2:#EEF3F0; --ink:#141A16; --muted:#5B655F; --line:#DBE2DD;
+  --accent:#15803D; --accent-ink:#FFFFFF; --accent-soft:#E6F4EA; --signal:#B42318;
+  --font-ui:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+  --font-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px; color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--font-ui);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#stand g:focus{outline:none}
+.wrap{padding-inline:16px;max-width:1600px;margin:0 auto}
+
+.top{position:sticky;top:0;z-index:20;background:rgba(241,244,242,.92);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;gap:14px 28px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;gap:14px;align-items:center;min-width:0}
+.badge{flex:none;width:50px;height:50px;border-radius:12px;background:var(--accent);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.badge span{font-size:10.5px;font-weight:700;letter-spacing:.06em;opacity:.8}
+.badge b{font-size:22px;font-weight:800}
+.brand small{color:var(--muted);font-size:12.5px;font-weight:600}
+.brand h1{margin:0;font-size:clamp(16px,1.5vw,20px);line-height:1.25;font-weight:750;text-wrap:balance}
+.hdr-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tabs{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.tabs a{padding:7px 14px;border-radius:999px;text-decoration:none;color:var(--muted);font-weight:650;font-size:13.5px;white-space:nowrap}
+.tabs a[aria-current="page"]{background:var(--ink);color:#fff}
+.tabs a:hover:not([aria-current="page"]){color:var(--ink);background:var(--surface-2)}
+main{padding-block:18px 48px}
+.view[hidden]{display:none!important}
+
+.setup{display:grid;grid-template-columns:300px minmax(0,1fr) 310px;gap:16px;align-items:start}
+@media (max-width:1280px){.setup{grid-template-columns:minmax(0,1fr) 310px}.steps-col{grid-column:1/-1;order:3}}
+@media (max-width:860px){.setup{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.panel h2,.panel h3{margin:0 0 12px;font-size:14.5px;font-weight:750}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+.steps{list-style:none;margin:0;padding:0}
+.steps li{position:relative;padding:0 0 11px 30px;font-size:13.2px;line-height:1.45}
+.steps li.sub{padding-left:46px}
+.steps li::before{content:"";position:absolute;left:5px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid #C5CDC7;background:var(--surface);box-sizing:border-box}
+.steps li.sub::before{left:21px;width:10px;height:10px;top:5px}
+.steps li::after{content:"";position:absolute;left:10px;top:19px;bottom:1px;width:2px;background:#E2E8E3}
+.steps li:last-child::after{display:none}
+.steps li.done::before{background:var(--accent);border-color:var(--accent)}
+.steps li.done::after{background:color-mix(in srgb,var(--accent) 35%,#E2E8E3)}
+.steps .n{font:600 11.5px var(--font-num);color:var(--muted);margin-right:3px}
+.steps li.done .n{color:var(--accent)}
+
+.stage-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;min-width:0}
+.stand-wrap{background:#E3E8E4;padding:12px;overflow-x:auto}
+#stand{display:block;width:100%;min-width:660px;height:auto;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.controls{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;padding:12px 16px;border-top:1px solid var(--line)}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctl .lbl{font-size:12.5px;color:var(--muted);font-weight:600}
+.ctl select{border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--surface);font-size:13.5px}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:650;font-size:13.5px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;user-select:none;-webkit-user-select:none;line-height:1.2}
+.btn:hover{border-color:#B8C2BB}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.danger{color:var(--signal)}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));color:var(--accent)}
+.muted{color:var(--muted)}
+.tiny{font-size:12.5px;line-height:1.45}
+.note-chip{font-size:12px;color:var(--muted)}
+
+.field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
+.field input{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 8px;font:500 14px var(--font-num);color:var(--ink);min-width:0;width:100%}
+.rec-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.jr-wrap{max-height:340px;overflow:auto;margin-top:12px}
+.jr{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.jr th{font-weight:650;color:var(--muted);text-align:left;padding:5px 4px;border-bottom:1px solid var(--line);font-size:11.5px;position:sticky;top:0;background:var(--surface)}
+.jr td{padding:5px 4px;border-bottom:1px solid var(--line);font-family:var(--font-num);font-size:12.5px}
+.jr tr:last-child td{border-bottom:0}
+.jr .x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0 4px}
+.jr .x:hover{color:var(--signal)}
+.empty{color:var(--muted);font-size:12.5px;padding:8px 0 0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font:600 13px var(--font-num)}
+.dline{display:flex;gap:8px;align-items:end}
+.dline .field{flex:1}
+
+.calc{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1150px){.calc{grid-template-columns:minmax(0,1fr)}}
+.tblwrap{overflow-x:auto}
+table.lab{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+table.lab th,table.lab td{border:1px solid var(--line);padding:5px 6px;text-align:center;vertical-align:middle}
+table.lab th{background:var(--surface-2);font-weight:700;font-size:12.5px;line-height:1.3}
+table.lab th.l{text-align:left}
+table.lab td{font-family:var(--font-num);font-size:13px}
+table.lab td input{width:100%;min-width:48px;border:1px solid transparent;background:var(--surface-2);border-radius:6px;padding:5px 3px;text-align:center;font:500 13px var(--font-num);color:var(--ink)}
+table.lab td input.t{font-family:var(--font-ui);font-size:12.5px}
+table.lab td input:hover{border-color:var(--line)}
+table.lab td input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+.blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.blk-h{display:flex;gap:6px;align-items:center;font-weight:700;font-size:13.5px;margin-bottom:6px;flex-wrap:wrap}
+.blk-h input{width:76px;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font:500 13px var(--font-num);text-align:center;background:var(--surface-2)}
+.blk-h input:focus{border-color:var(--accent);outline:none;background:var(--surface)}
+.formula{display:flex;flex-direction:column;gap:10px}
+.fline{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;padding:9px 12px;background:var(--surface-2);border-radius:8px;border:1px solid var(--line);overflow-x:auto}
+.fline .cap{flex-basis:100%;font-size:12px;color:var(--muted);font-weight:600}
+.fline input{flex:0 1 96px;min-width:0;border:1px solid var(--line);border-radius:6px;padding:5px 7px;font:500 13.5px var(--font-num);background:var(--surface);text-align:center}
+.fline input:focus{border-color:var(--accent);outline:none}
+.fline select{border:1px solid var(--line);border-radius:6px;padding:5px 7px;background:var(--surface)}
+.fline .u{font-size:12.5px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+math{font-family:"STIX Two Math","Cambria Math","Latin Modern Math","Times New Roman",serif;font-size:1.1em}
+textarea.conc{width:100%;min-height:150px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface);resize:vertical;line-height:1.55}
+textarea.conc:focus{border-color:var(--accent);outline:none}
+#graph{width:100%;height:auto;display:block}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:6px}
+
+.theory{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1000px){.theory{grid-template-columns:minmax(0,1fr)}}
+.prose{max-width:76ch}
+.prose h2{font-size:17px;margin:0 0 8px}
+.prose h3{font-size:15px;margin:18px 0 6px}
+.prose p{margin:0 0 10px}
+.prose ul{margin:0 0 10px;padding-left:1.3em}
+.prose figure{margin:8px 0 12px}
+.prose figcaption{font-size:12.5px;color:var(--muted);text-align:center}
+.eq{text-align:center;margin:6px 0 12px}
+ol.qlist{margin:0;padding-left:1.6em;display:flex;flex-direction:column;gap:8px}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;z-index:50;max-width:min(560px,calc(100vw - 32px));pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---------- телефон и режим предпросмотра ---------- */
+.nojs{margin:0 0 14px;padding:14px 16px;border-radius:10px;background:#FFF4E5;border:1px solid #F5C17A;color:#5A3A00;font-size:15px;line-height:1.5}
+.nojs b{display:block;font-size:16px;margin-bottom:4px}
+details.stepsbox>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px}
+details.stepsbox>summary::-webkit-details-marker{display:none}
+details.stepsbox>summary h2{margin:0}
+details.stepsbox>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-top:-4px;flex:none}
+details.stepsbox[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+details.stepsbox[open]>summary{margin-bottom:12px}
+.mob{display:none}
+.stand-wrap.fit #stand{min-width:0}
+@media (max-width:860px){
+  .top{position:static;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .stage-card{order:-1}
+  .steps-col{order:0}
+  .setup>aside:last-child{order:1}
+  .mob{display:flex}
+  input,select,textarea{font-size:16px!important}
+  .btn{min-height:40px}
+  .btn.small{min-height:36px}
+  .stand-wrap{padding:8px;-webkit-overflow-scrolling:touch}
+}
+@media (max-width:860px) and (orientation:landscape){.rot-hint{display:none}}
+@media (max-width:860px){
+  .hdr-right{width:100%}
+  .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:1 1 260px;border-radius:12px}
+  .tabs a{text-align:center;white-space:normal;line-height:1.2;border-radius:9px;padding:8px 6px;display:flex;align-items:center;justify-content:center}
+  .controls>.note-chip{display:none}
+}
+@media (max-height:520px) and (orientation:landscape){
+  .brand small{display:none}
+  .badge{width:40px;height:40px}
+  .badge b{font-size:18px}
+  .brand h1{font-size:15px}
+  .top .wrap{padding-block:8px}
+  .tabs a{padding:5px 12px}
+  main{padding-top:10px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="badge"><span>ЛР</span><b>11</b></div>
+      <div>
+        <small>Лабораторная работа № 11, измерительный блок FPM-01</small>
+        <h1>Измерение удельного сопротивления нихромовой проволоки</h1>
+      </div>
+    </div>
+    <div class="hdr-right">
+    <nav class="tabs" aria-label="Разделы">
+      <a href="#setup" data-tab="setup" aria-current="page">Установка</a>
+      <a href="#calc" data-tab="calc">Таблицы и расчёт</a>
+      <a href="#theory" data-tab="theory">Теория и вопросы</a>
+    </nav>
+    <button class="btn small danger" id="restartBtn" title="Стереть журнал, таблицы, вывод и все отметки">Начать заново</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="nojs" id="nojs"><b>Лаба открыта в режиме предпросмотра</b>В нём не работают скрипты, поэтому установка не оживает и вкладки не переключаются. Откройте лабу по ссылке в Safari или Chrome, тогда всё заработает</div>
+
+<!-- ============ УСТАНОВКА ============ -->
+<section class="view" id="v-setup">
+  <div class="setup">
+    <aside class="col steps-col">
+      <details class="panel stepsbox" open><summary><h2>Задание</h2></summary>
+        <ol class="steps" id="steps">
+          <li><span class="n">1.</span>Измерьте диаметр проволоки на 8–10 различных её участках микрометром. Измерения диаметра, проведённые на различных участках, лучше всего при вычислениях усреднить. Рассчитайте площадь поперечного сечения проволоки, оцените погрешность результата.</li>
+          <li><span class="n">2.</span>Составьте таблицу основных характеристик амперметра и вольтметра (система прибора, класс точности, предел измерений x<sub>П</sub> (число делений шкалы n, цена деления x<sub>П</sub>/n, чувствительность n/x<sub>П</sub>, абсолютная погрешность Δx<sub>M</sub>, внутреннее сопротивление прибора (на данном пределе измерений).</li>
+          <li><span class="n">3.</span>Используя значения внутренних сопротивлений, указанных на приборах, и зная, что сопротивление проволоки имеет величину порядка 5 Ом, оцените с помощью формул (10.3) и (10.4) величину поправок при измерениях R<sub>пр</sub> по схеме рис. 5, а и б. <b>Для работы выберите ту из схем, которая приводит к меньшей поправке.</b></li>
+          <li><span class="n">4.</span>Измерение удельного сопротивления исследуемого проводника осуществляется прибором FPM-01, общий вид лицевой панели которого представлен на рис. 6. Включите прибор в соответствии с выбранной схемой (рис. 5, а или 5, б) и проведите измерения. Для этого:</li>
+          <li class="sub"><span class="n">а)</span>включите питание сети (включите вилку провода питания прибора в розетку);</li>
+          <li class="sub"><span class="n">б)</span>включите прибор переключателем «Сеть» W1 (рис. 6), при этом должен засветиться индикатор напряжения сети Z1;</li>
+          <li class="sub"><span class="n">в)</span>нажмите клавишу W3 (рис. 6), что обеспечивает измерение сопротивления провода по механическому методу;</li>
+          <li class="sub"><span class="n">г)</span>нажмите клавишу W2, что позволит определить сопротивление провода с точным измерением напряжения (по схеме рис. 5, а). Отжатая клавиша W2 позволяет определить сопротивление провода с точным измерением тока (по схеме рис. 5, б);</li>
+          <li class="sub"><span class="n">д)</span>передвиньте подвижный кронштейн на ≈ 0,7 длины исследуемого провода по отношению к основанию;</li>
+          <li class="sub"><span class="n">е)</span>при помощи потенциометра «Регулятор тока» P1 (рис. 6) установите такое значение тока, чтобы вольтметр показывал 2/3 измерительного диапазона;</li>
+          <li class="sub"><span class="n">ж)</span>изменяя ток с помощью потенциометра P1, запишите в виде таблицы показания амперметра и вольтметра. Для каждой длины проводятся 10–12 измерений J и U (как правило, в процессе измерений показания приборов записывают в делениях шкалы без какой-либо обработки);</li>
+          <li class="sub"><span class="n">з)</span>постройте график зависимости U = f(J) и с его помощью рассчитайте измеряемую величину сопротивления R, а затем вычислите искомое R<sub>пр</sub>;</li>
+          <li class="sub"><span class="n">и)</span>измерьте длину исследуемой части провода при помощи шкалы на колонке;</li>
+          <li class="sub"><span class="n">к)</span>проведите измерения по п. 4 для трёх различных длин проволоки;</li>
+          <li class="sub"><span class="n">л)</span>определите удельное сопротивление проволоки по формуле ρ = R S/l. Оцените допущенную при этом погрешность. С какой точностью следует измерять сопротивление проволоки при достигнутой точности измерения её длины и поперечного сечения?</li>
+        </ol>
+      </details>
+    </aside>
+
+    <div class="stage-card">
+      <div class="stand-wrap">
+        <svg id="stand" width="1000" height="720" viewBox="0 0 1000 720" aria-label="Установка: колонка с нихромовой проволокой и подвижным кронштейном, измерительный блок FPM-01 с милливольтметром, миллиамперметром, клавишами W1, W2, W3 и регулятором тока P1, микрометр"><defs>
+    <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EDF0EE"></stop><stop offset="1" stop-color="#D2D9D4"></stop></linearGradient>
+    <linearGradient id="gPanel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A4049"></stop><stop offset="1" stop-color="#262A30"></stop></linearGradient>
+    <linearGradient id="gBezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#30353C"></stop><stop offset="1" stop-color="#16191D"></stop></linearGradient>
+    <linearGradient id="gFace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFBF6"></stop><stop offset="1" stop-color="#ECE8DB"></stop></linearGradient>
+    <linearGradient id="gMirror" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#B9C6CF"></stop><stop offset=".5" stop-color="#EEF3F6"></stop><stop offset="1" stop-color="#AAB8C2"></stop></linearGradient>
+    <linearGradient id="gKey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5A616A"></stop><stop offset="1" stop-color="#2A2F35"></stop></linearGradient>
+    <linearGradient id="gKeyOn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E3338"></stop><stop offset="1" stop-color="#1A1D21"></stop></linearGradient>
+    <radialGradient id="gKnob" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#5A6069"></stop><stop offset=".6" stop-color="#1E2227"></stop><stop offset="1" stop-color="#0C0E10"></stop></radialGradient>
+    <radialGradient id="gKnobCap" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#8E959E"></stop><stop offset="1" stop-color="#3A4048"></stop></radialGradient>
+    <linearGradient id="gSteel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F2F4F6"></stop><stop offset=".45" stop-color="#C3C9CF"></stop><stop offset="1" stop-color="#8D959D"></stop></linearGradient>
+    <linearGradient id="gSteelV" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8D959D"></stop><stop offset=".45" stop-color="#E6EAED"></stop><stop offset="1" stop-color="#8D959D"></stop></linearGradient>
+    <linearGradient id="gThim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9AA2AA"></stop><stop offset=".3" stop-color="#E9ECEF"></stop><stop offset=".55" stop-color="#D0D5DA"></stop><stop offset="1" stop-color="#7C858E"></stop></linearGradient>
+    <linearGradient id="gRuler" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FBFAF5"></stop><stop offset="1" stop-color="#E9E6DA"></stop></linearGradient>
+    <radialGradient id="gWireSec" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#E4E7EA"></stop><stop offset="1" stop-color="#6E767E"></stop></radialGradient>
+  </defs>
+  <style>
+    .eng{font:600 12px var(--font-ui);fill:#D5DAE1;letter-spacing:.04em}
+    .eng.sm{font-size:10.5px;letter-spacing:0;fill:#AEB5BF}
+    .lab{font:700 11.5px var(--font-ui);fill:#4E5852;letter-spacing:.06em}
+    .knob,.hit{touch-action:none}
+    .hit{cursor:pointer}
+  </style><rect x="20" y="14" width="216" height="692" rx="14" fill="url(#gBody)" stroke="#AEB8B1"></rect><text x="34" y="38" class="lab">КОЛОНКА</text><rect x="34" y="146" width="112" height="14" rx="3" fill="#3C4652"></rect><rect x="96" y="160" width="8" height="522" fill="url(#gSteelV)"></rect><rect x="30" y="682" width="196" height="16" rx="4" fill="#3C4652"></rect><line x1="70" y1="158" x2="70" y2="684" stroke="#7B8289" stroke-width="2"></line><line x1="69.4" y1="158" x2="69.4" y2="684" stroke="#E2E5E8" stroke-width=".6"></line><rect x="58" y="154" width="24" height="12" rx="2" fill="#B8862E" stroke="#6B4A12"></rect><rect x="58" y="676" width="24" height="10" rx="2" fill="#B8862E" stroke="#6B4A12"></rect><text x="40" y="140" style="font:600 10.5px var(--font-ui);fill:#4E5852">нихром</text><rect x="150" y="166" width="28" height="520" fill="url(#gRuler)" stroke="#B7B2A2"></rect><text x="183" y="680" style="font:600 11px var(--font-num);fill:#1E2420">0</text><text x="183" y="630" style="font:600 11px var(--font-num);fill:#1E2420">5</text><text x="183" y="580" style="font:600 11px var(--font-num);fill:#1E2420">10</text><text x="183" y="530" style="font:600 11px var(--font-num);fill:#1E2420">15</text><text x="183" y="480" style="font:600 11px var(--font-num);fill:#1E2420">20</text><text x="183" y="430" style="font:600 11px var(--font-num);fill:#1E2420">25</text><text x="183" y="380" style="font:600 11px var(--font-num);fill:#1E2420">30</text><text x="183" y="330" style="font:600 11px var(--font-num);fill:#1E2420">35</text><text x="183" y="280" style="font:600 11px var(--font-num);fill:#1E2420">40</text><text x="183" y="230" style="font:600 11px var(--font-num);fill:#1E2420">45</text><text x="183" y="180" style="font:600 11px var(--font-num);fill:#1E2420">50</text><g stroke="#1E2420" stroke-width=".9"><line x1="150" y1="676" x2="164" y2="676"></line><line x1="150" y1="671" x2="154" y2="671"></line><line x1="150" y1="666" x2="158" y2="666"></line><line x1="150" y1="661" x2="154" y2="661"></line><line x1="150" y1="656" x2="158" y2="656"></line><line x1="150" y1="651" x2="154" y2="651"></line><line x1="150" y1="646" x2="158" y2="646"></line><line x1="150" y1="641" x2="154" y2="641"></line><line x1="150" y1="636" x2="158" y2="636"></line><line x1="150" y1="631" x2="154" y2="631"></line><line x1="150" y1="626" x2="164" y2="626"></line><line x1="150" y1="621" x2="154" y2="621"></line><line x1="150" y1="616" x2="158" y2="616"></line><line x1="150" y1="611" x2="154" y2="611"></line><line x1="150" y1="606" x2="158" y2="606"></line><line x1="150" y1="601" x2="154" y2="601"></line><line x1="150" y1="596" x2="158" y2="596"></line><line x1="150" y1="591" x2="154" y2="591"></line><line x1="150" y1="586" x2="158" y2="586"></line><line x1="150" y1="581" x2="154" y2="581"></line><line x1="150" y1="576" x2="164" y2="576"></line><line x1="150" y1="571" x2="154" y2="571"></line><line x1="150" y1="566" x2="158" y2="566"></line><line x1="150" y1="561" x2="154" y2="561"></line><line x1="150" y1="556" x2="158" y2="556"></line><line x1="150" y1="551" x2="154" y2="551"></line><line x1="150" y1="546" x2="158" y2="546"></line><line x1="150" y1="541" x2="154" y2="541"></line><line x1="150" y1="536" x2="158" y2="536"></line><line x1="150" y1="531" x2="154" y2="531"></line><line x1="150" y1="526" x2="164" y2="526"></line><line x1="150" y1="521" x2="154" y2="521"></line><line x1="150" y1="516" x2="158" y2="516"></line><line x1="150" y1="511" x2="154" y2="511"></line><line x1="150" y1="506" x2="158" y2="506"></line><line x1="150" y1="501" x2="154" y2="501"></line><line x1="150" y1="496" x2="158" y2="496"></line><line x1="150" y1="491" x2="154" y2="491"></line><line x1="150" y1="486" x2="158" y2="486"></line><line x1="150" y1="481" x2="154" y2="481"></line><line x1="150" y1="476" x2="164" y2="476"></line><line x1="150" y1="471" x2="154" y2="471"></line><line x1="150" y1="466" x2="158" y2="466"></line><line x1="150" y1="461" x2="154" y2="461"></line><line x1="150" y1="456" x2="158" y2="456"></line><line x1="150" y1="451" x2="154" y2="451"></line><line x1="150" y1="446" x2="158" y2="446"></line><line x1="150" y1="441" x2="154" y2="441"></line><line x1="150" y1="436" x2="158" y2="436"></line><line x1="150" y1="431" x2="154" y2="431"></line><line x1="150" y1="426" x2="164" y2="426"></line><line x1="150" y1="421" x2="154" y2="421"></line><line x1="150" y1="416" x2="158" y2="416"></line><line x1="150" y1="411" x2="154" y2="411"></line><line x1="150" y1="406" x2="158" y2="406"></line><line x1="150" y1="401" x2="154" y2="401"></line><line x1="150" y1="396" x2="158" y2="396"></line><line x1="150" y1="391" x2="154" y2="391"></line><line x1="150" y1="386" x2="158" y2="386"></line><line x1="150" y1="381" x2="154" y2="381"></line><line x1="150" y1="376" x2="164" y2="376"></line><line x1="150" y1="371" x2="154" y2="371"></line><line x1="150" y1="366" x2="158" y2="366"></line><line x1="150" y1="361" x2="154" y2="361"></line><line x1="150" y1="356" x2="158" y2="356"></line><line x1="150" y1="351" x2="154" y2="351"></line><line x1="150" y1="346" x2="158" y2="346"></line><line x1="150" y1="341" x2="154" y2="341"></line><line x1="150" y1="336" x2="158" y2="336"></line><line x1="150" y1="331" x2="154" y2="331"></line><line x1="150" y1="326" x2="164" y2="326"></line><line x1="150" y1="321" x2="154" y2="321"></line><line x1="150" y1="316" x2="158" y2="316"></line><line x1="150" y1="311" x2="154" y2="311"></line><line x1="150" y1="306" x2="158" y2="306"></line><line x1="150" y1="301" x2="154" y2="301"></line><line x1="150" y1="296" x2="158" y2="296"></line><line x1="150" y1="291" x2="154" y2="291"></line><line x1="150" y1="286" x2="158" y2="286"></line><line x1="150" y1="281" x2="154" y2="281"></line><line x1="150" y1="276" x2="164" y2="276"></line><line x1="150" y1="271" x2="154" y2="271"></line><line x1="150" y1="266" x2="158" y2="266"></line><line x1="150" y1="261" x2="154" y2="261"></line><line x1="150" y1="256" x2="158" y2="256"></line><line x1="150" y1="251" x2="154" y2="251"></line><line x1="150" y1="246" x2="158" y2="246"></line><line x1="150" y1="241" x2="154" y2="241"></line><line x1="150" y1="236" x2="158" y2="236"></line><line x1="150" y1="231" x2="154" y2="231"></line><line x1="150" y1="226" x2="164" y2="226"></line><line x1="150" y1="221" x2="154" y2="221"></line><line x1="150" y1="216" x2="158" y2="216"></line><line x1="150" y1="211" x2="154" y2="211"></line><line x1="150" y1="206" x2="158" y2="206"></line><line x1="150" y1="201" x2="154" y2="201"></line><line x1="150" y1="196" x2="158" y2="196"></line><line x1="150" y1="191" x2="154" y2="191"></line><line x1="150" y1="186" x2="158" y2="186"></line><line x1="150" y1="181" x2="154" y2="181"></line><line x1="150" y1="176" x2="164" y2="176"></line></g><text x="183" y="160" style="font:600 10.5px var(--font-ui);fill:#4E5852">см</text><g id="brk" class="hit drag" tabindex="0" role="slider" aria-label="Подвижный кронштейн" style="cursor:ns-resize" transform="translate(0,243.85)" aria-valuenow="43.2">
+    <rect x="44" y="-18" width="140" height="36" fill="transparent"></rect>
+    <rect x="58" y="-7" width="24" height="14" rx="2" fill="#B8862E" stroke="#6B4A12"></rect>
+    <rect x="82" y="-4" width="66" height="8" fill="#3C4652"></rect>
+    <rect x="91" y="-13" width="18" height="26" rx="3" fill="#2D353F"></rect>
+    <rect x="112" y="-10" width="22" height="20" rx="4" fill="#2D353F"></rect>
+    <path d="M115,-4 h16 M115,0 h16 M115,4 h16" stroke="#59636E" stroke-width="1.2"></path>
+    <path d="M150,0 L142,-6 L142,6 Z" fill="#B42318"></path>
+    <line x1="150" y1="0" x2="178" y2="0" stroke="#B42318" stroke-width="1"></line></g><clipPath id="cLoupe"><rect id="cLoupeR" x="182" y="197.85" width="48" height="92" rx="8"></rect></clipPath><g id="loupe"><g clip-path="url(#cLoupe)"><rect x="182" y="197.8450839817374" width="48" height="92" fill="url(#gRuler)"></rect><line x1="182" y1="294.62" x2="188" y2="294.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="289.62" x2="188" y2="289.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="284.62" x2="188" y2="284.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="279.62" x2="193" y2="279.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="274.62" x2="188" y2="274.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="269.62" x2="188" y2="269.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="264.62" x2="188" y2="264.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="259.62" x2="188" y2="259.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="254.62" x2="199" y2="254.62" stroke="#1E2420" stroke-width="1.3"></line><text x="204" y="258.62" style="font:600 12px var(--font-num);fill:#1E2420">43</text><line x1="182" y1="249.62" x2="188" y2="249.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="244.62" x2="188" y2="244.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="239.62" x2="188" y2="239.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="234.62" x2="188" y2="234.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="229.62" x2="193" y2="229.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="224.62" x2="188" y2="224.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="219.62" x2="188" y2="219.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="214.62" x2="188" y2="214.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="209.62" x2="188" y2="209.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="204.62" x2="199" y2="204.62" stroke="#1E2420" stroke-width="1.3"></line><text x="204" y="208.62" style="font:600 12px var(--font-num);fill:#1E2420">44</text><line x1="182" y1="199.62" x2="188" y2="199.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="194.62" x2="188" y2="194.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="189.62" x2="188" y2="189.62" stroke="#1E2420" stroke-width="0.9"></line><line x1="182" y1="243.85" x2="230" y2="243.85" stroke="#B42318" stroke-width="1.4"></line></g><rect x="182" y="197.8450839817374" width="48" height="92" rx="8" fill="none" stroke="#2D353F" stroke-width="2.5"></rect></g><rect x="250" y="14" width="730" height="378" rx="14" fill="url(#gPanel)" stroke="#121417"></rect><text x="268" y="31" class="eng sm" style="letter-spacing:.08em">ИЗМЕРИТЕЛЬНЫЙ БЛОК FPM-01</text><g><rect x="268" y="40" width="284" height="240" rx="10" fill="url(#gBezel)"></rect><rect x="278" y="50" width="264" height="172" rx="4" fill="url(#gFace)"></rect><g stroke="#1A1A1A"><line x1="314.88" y1="134.35" x2="326.02" y2="144.39" stroke-width="1.4"></line><line x1="315.84" y1="133.29" x2="319.52" y2="136.68" stroke-width="0.6"></line><line x1="316.81" y1="132.25" x2="320.45" y2="135.68" stroke-width="0.6"></line><line x1="317.80" y1="131.21" x2="321.40" y2="134.68" stroke-width="0.6"></line><line x1="318.80" y1="130.19" x2="322.36" y2="133.70" stroke-width="0.6"></line><line x1="319.81" y1="129.17" x2="326.15" y2="135.56" stroke-width="1"></line><line x1="320.83" y1="128.17" x2="324.31" y2="131.76" stroke-width="0.6"></line><line x1="321.86" y1="127.18" x2="325.30" y2="130.81" stroke-width="0.6"></line><line x1="322.90" y1="126.20" x2="326.30" y2="129.87" stroke-width="0.6"></line><line x1="323.95" y1="125.24" x2="327.31" y2="128.94" stroke-width="0.6"></line><line x1="325.02" y1="124.28" x2="330.99" y2="131.01" stroke-width="1"></line><line x1="326.09" y1="123.34" x2="329.37" y2="127.11" stroke-width="0.6"></line><line x1="327.18" y1="122.41" x2="330.41" y2="126.22" stroke-width="0.6"></line><line x1="328.27" y1="121.49" x2="331.46" y2="125.34" stroke-width="0.6"></line><line x1="329.38" y1="120.58" x2="332.53" y2="124.47" stroke-width="0.6"></line><line x1="330.49" y1="119.69" x2="336.08" y2="126.74" stroke-width="1"></line><line x1="331.62" y1="118.81" x2="334.68" y2="122.76" stroke-width="0.6"></line><line x1="332.75" y1="117.94" x2="335.77" y2="121.92" stroke-width="0.6"></line><line x1="333.90" y1="117.08" x2="336.87" y2="121.10" stroke-width="0.6"></line><line x1="335.05" y1="116.24" x2="337.98" y2="120.29" stroke-width="0.6"></line><line x1="336.22" y1="115.41" x2="341.40" y2="122.76" stroke-width="1"></line><line x1="337.39" y1="114.59" x2="340.23" y2="118.71" stroke-width="0.6"></line><line x1="338.57" y1="113.78" x2="341.36" y2="117.93" stroke-width="0.6"></line><line x1="339.76" y1="112.99" x2="342.51" y2="117.17" stroke-width="0.6"></line><line x1="340.96" y1="112.21" x2="343.66" y2="116.42" stroke-width="0.6"></line><line x1="342.17" y1="111.45" x2="346.94" y2="119.08" stroke-width="1"></line><line x1="343.39" y1="110.70" x2="345.99" y2="114.97" stroke-width="0.6"></line><line x1="344.61" y1="109.96" x2="347.17" y2="114.26" stroke-width="0.6"></line><line x1="345.85" y1="109.24" x2="348.35" y2="113.56" stroke-width="0.6"></line><line x1="347.09" y1="108.53" x2="349.54" y2="112.88" stroke-width="0.6"></line><line x1="348.34" y1="107.83" x2="355.56" y2="120.98" stroke-width="1.4"></line><line x1="349.59" y1="107.15" x2="351.95" y2="111.56" stroke-width="0.6"></line><line x1="350.86" y1="106.48" x2="353.17" y2="110.92" stroke-width="0.6"></line><line x1="352.13" y1="105.83" x2="354.39" y2="110.29" stroke-width="0.6"></line><line x1="353.41" y1="105.19" x2="355.62" y2="109.68" stroke-width="0.6"></line><line x1="354.69" y1="104.57" x2="358.58" y2="112.68" stroke-width="1"></line><line x1="355.99" y1="103.95" x2="358.10" y2="108.49" stroke-width="0.6"></line><line x1="357.29" y1="103.36" x2="359.34" y2="107.92" stroke-width="0.6"></line><line x1="358.59" y1="102.78" x2="360.60" y2="107.36" stroke-width="0.6"></line><line x1="359.90" y1="102.21" x2="361.86" y2="106.81" stroke-width="0.6"></line><line x1="361.22" y1="101.66" x2="364.65" y2="109.98" stroke-width="1"></line><line x1="362.55" y1="101.12" x2="364.40" y2="105.76" stroke-width="0.6"></line><line x1="363.88" y1="100.60" x2="365.68" y2="105.26" stroke-width="0.6"></line><line x1="365.22" y1="100.09" x2="366.96" y2="104.77" stroke-width="0.6"></line><line x1="366.56" y1="99.60" x2="368.25" y2="104.30" stroke-width="0.6"></line><line x1="367.91" y1="99.12" x2="370.86" y2="107.62" stroke-width="1"></line><line x1="369.26" y1="98.66" x2="370.85" y2="103.40" stroke-width="0.6"></line><line x1="370.62" y1="98.21" x2="372.15" y2="102.97" stroke-width="0.6"></line><line x1="371.98" y1="97.78" x2="373.46" y2="102.55" stroke-width="0.6"></line><line x1="373.35" y1="97.36" x2="374.78" y2="102.15" stroke-width="0.6"></line><line x1="374.72" y1="96.96" x2="377.20" y2="105.61" stroke-width="1"></line><line x1="376.09" y1="96.57" x2="377.42" y2="101.39" stroke-width="0.6"></line><line x1="377.48" y1="96.20" x2="378.75" y2="101.04" stroke-width="0.6"></line><line x1="378.86" y1="95.85" x2="380.08" y2="100.70" stroke-width="0.6"></line><line x1="380.25" y1="95.51" x2="381.41" y2="100.37" stroke-width="0.6"></line><line x1="381.64" y1="95.18" x2="383.64" y2="103.96" stroke-width="1"></line><line x1="383.04" y1="94.87" x2="384.09" y2="99.76" stroke-width="0.6"></line><line x1="384.44" y1="94.58" x2="385.44" y2="99.48" stroke-width="0.6"></line><line x1="385.84" y1="94.30" x2="386.78" y2="99.21" stroke-width="0.6"></line><line x1="387.25" y1="94.04" x2="388.13" y2="98.96" stroke-width="0.6"></line><line x1="388.65" y1="93.79" x2="391.16" y2="108.58" stroke-width="1.4"></line><line x1="390.06" y1="93.56" x2="390.84" y2="98.50" stroke-width="0.6"></line><line x1="391.48" y1="93.35" x2="392.20" y2="98.29" stroke-width="0.6"></line><line x1="392.89" y1="93.15" x2="393.56" y2="98.10" stroke-width="0.6"></line><line x1="394.31" y1="92.97" x2="394.92" y2="97.93" stroke-width="0.6"></line><line x1="395.73" y1="92.80" x2="396.74" y2="101.74" stroke-width="1"></line><line x1="397.15" y1="92.65" x2="397.66" y2="97.62" stroke-width="0.6"></line><line x1="398.58" y1="92.51" x2="399.02" y2="97.49" stroke-width="0.6"></line><line x1="400.00" y1="92.39" x2="400.39" y2="97.38" stroke-width="0.6"></line><line x1="401.43" y1="92.29" x2="401.76" y2="97.28" stroke-width="0.6"></line><line x1="402.85" y1="92.20" x2="403.36" y2="101.19" stroke-width="1"></line><line x1="404.28" y1="92.13" x2="404.51" y2="97.12" stroke-width="0.6"></line><line x1="405.71" y1="92.07" x2="405.88" y2="97.07" stroke-width="0.6"></line><line x1="407.14" y1="92.03" x2="407.25" y2="97.03" stroke-width="0.6"></line><line x1="408.57" y1="92.01" x2="408.63" y2="97.01" stroke-width="0.6"></line><line x1="410.00" y1="92.00" x2="410.00" y2="101.00" stroke-width="1"></line><line x1="411.43" y1="92.01" x2="411.37" y2="97.01" stroke-width="0.6"></line><line x1="412.86" y1="92.03" x2="412.75" y2="97.03" stroke-width="0.6"></line><line x1="414.29" y1="92.07" x2="414.12" y2="97.07" stroke-width="0.6"></line><line x1="415.72" y1="92.13" x2="415.49" y2="97.12" stroke-width="0.6"></line><line x1="417.15" y1="92.20" x2="416.64" y2="101.19" stroke-width="1"></line><line x1="418.57" y1="92.29" x2="418.24" y2="97.28" stroke-width="0.6"></line><line x1="420.00" y1="92.39" x2="419.61" y2="97.38" stroke-width="0.6"></line><line x1="421.42" y1="92.51" x2="420.98" y2="97.49" stroke-width="0.6"></line><line x1="422.85" y1="92.65" x2="422.34" y2="97.62" stroke-width="0.6"></line><line x1="424.27" y1="92.80" x2="423.26" y2="101.74" stroke-width="1"></line><line x1="425.69" y1="92.97" x2="425.08" y2="97.93" stroke-width="0.6"></line><line x1="427.11" y1="93.15" x2="426.44" y2="98.10" stroke-width="0.6"></line><line x1="428.52" y1="93.35" x2="427.80" y2="98.29" stroke-width="0.6"></line><line x1="429.94" y1="93.56" x2="429.16" y2="98.50" stroke-width="0.6"></line><line x1="431.35" y1="93.79" x2="428.84" y2="108.58" stroke-width="1.4"></line><line x1="432.75" y1="94.04" x2="431.87" y2="98.96" stroke-width="0.6"></line><line x1="434.16" y1="94.30" x2="433.22" y2="99.21" stroke-width="0.6"></line><line x1="435.56" y1="94.58" x2="434.56" y2="99.48" stroke-width="0.6"></line><line x1="436.96" y1="94.87" x2="435.91" y2="99.76" stroke-width="0.6"></line><line x1="438.36" y1="95.18" x2="436.36" y2="103.96" stroke-width="1"></line><line x1="439.75" y1="95.51" x2="438.59" y2="100.37" stroke-width="0.6"></line><line x1="441.14" y1="95.85" x2="439.92" y2="100.70" stroke-width="0.6"></line><line x1="442.52" y1="96.20" x2="441.25" y2="101.04" stroke-width="0.6"></line><line x1="443.91" y1="96.57" x2="442.58" y2="101.39" stroke-width="0.6"></line><line x1="445.28" y1="96.96" x2="442.80" y2="105.61" stroke-width="1"></line><line x1="446.65" y1="97.36" x2="445.22" y2="102.15" stroke-width="0.6"></line><line x1="448.02" y1="97.78" x2="446.54" y2="102.55" stroke-width="0.6"></line><line x1="449.38" y1="98.21" x2="447.85" y2="102.97" stroke-width="0.6"></line><line x1="450.74" y1="98.66" x2="449.15" y2="103.40" stroke-width="0.6"></line><line x1="452.09" y1="99.12" x2="449.14" y2="107.62" stroke-width="1"></line><line x1="453.44" y1="99.60" x2="451.75" y2="104.30" stroke-width="0.6"></line><line x1="454.78" y1="100.09" x2="453.04" y2="104.77" stroke-width="0.6"></line><line x1="456.12" y1="100.60" x2="454.32" y2="105.26" stroke-width="0.6"></line><line x1="457.45" y1="101.12" x2="455.60" y2="105.76" stroke-width="0.6"></line><line x1="458.78" y1="101.66" x2="455.35" y2="109.98" stroke-width="1"></line><line x1="460.10" y1="102.21" x2="458.14" y2="106.81" stroke-width="0.6"></line><line x1="461.41" y1="102.78" x2="459.40" y2="107.36" stroke-width="0.6"></line><line x1="462.71" y1="103.36" x2="460.66" y2="107.92" stroke-width="0.6"></line><line x1="464.01" y1="103.95" x2="461.90" y2="108.49" stroke-width="0.6"></line><line x1="465.31" y1="104.57" x2="461.42" y2="112.68" stroke-width="1"></line><line x1="466.59" y1="105.19" x2="464.38" y2="109.68" stroke-width="0.6"></line><line x1="467.87" y1="105.83" x2="465.61" y2="110.29" stroke-width="0.6"></line><line x1="469.14" y1="106.48" x2="466.83" y2="110.92" stroke-width="0.6"></line><line x1="470.41" y1="107.15" x2="468.05" y2="111.56" stroke-width="0.6"></line><line x1="471.66" y1="107.83" x2="464.44" y2="120.98" stroke-width="1.4"></line><line x1="472.91" y1="108.53" x2="470.46" y2="112.88" stroke-width="0.6"></line><line x1="474.15" y1="109.24" x2="471.65" y2="113.56" stroke-width="0.6"></line><line x1="475.39" y1="109.96" x2="472.83" y2="114.26" stroke-width="0.6"></line><line x1="476.61" y1="110.70" x2="474.01" y2="114.97" stroke-width="0.6"></line><line x1="477.83" y1="111.45" x2="473.06" y2="119.08" stroke-width="1"></line><line x1="479.04" y1="112.21" x2="476.34" y2="116.42" stroke-width="0.6"></line><line x1="480.24" y1="112.99" x2="477.49" y2="117.17" stroke-width="0.6"></line><line x1="481.43" y1="113.78" x2="478.64" y2="117.93" stroke-width="0.6"></line><line x1="482.61" y1="114.59" x2="479.77" y2="118.71" stroke-width="0.6"></line><line x1="483.78" y1="115.41" x2="478.60" y2="122.76" stroke-width="1"></line><line x1="484.95" y1="116.24" x2="482.02" y2="120.29" stroke-width="0.6"></line><line x1="486.10" y1="117.08" x2="483.13" y2="121.10" stroke-width="0.6"></line><line x1="487.25" y1="117.94" x2="484.23" y2="121.92" stroke-width="0.6"></line><line x1="488.38" y1="118.81" x2="485.32" y2="122.76" stroke-width="0.6"></line><line x1="489.51" y1="119.69" x2="483.92" y2="126.74" stroke-width="1"></line><line x1="490.62" y1="120.58" x2="487.47" y2="124.47" stroke-width="0.6"></line><line x1="491.73" y1="121.49" x2="488.54" y2="125.34" stroke-width="0.6"></line><line x1="492.82" y1="122.41" x2="489.59" y2="126.22" stroke-width="0.6"></line><line x1="493.91" y1="123.34" x2="490.63" y2="127.11" stroke-width="0.6"></line><line x1="494.98" y1="124.28" x2="489.01" y2="131.01" stroke-width="1"></line><line x1="496.05" y1="125.24" x2="492.69" y2="128.94" stroke-width="0.6"></line><line x1="497.10" y1="126.20" x2="493.70" y2="129.87" stroke-width="0.6"></line><line x1="498.14" y1="127.18" x2="494.70" y2="130.81" stroke-width="0.6"></line><line x1="499.17" y1="128.17" x2="495.69" y2="131.76" stroke-width="0.6"></line><line x1="500.19" y1="129.17" x2="493.85" y2="135.56" stroke-width="1"></line><line x1="501.20" y1="130.19" x2="497.64" y2="133.70" stroke-width="0.6"></line><line x1="502.20" y1="131.21" x2="498.60" y2="134.68" stroke-width="0.6"></line><line x1="503.19" y1="132.25" x2="499.55" y2="135.68" stroke-width="0.6"></line><line x1="504.16" y1="133.29" x2="500.48" y2="136.68" stroke-width="0.6"></line><line x1="505.12" y1="134.35" x2="493.98" y2="144.39" stroke-width="1.4"></line></g><path d="M314.88,134.35 A128 128 0 0 1 505.12,134.35" fill="none" stroke="#1A1A1A" stroke-width=".9"></path><path d="M333.75,146.37 A106 106 0 0 1 486.25,146.37" fill="none" stroke="url(#gMirror)" stroke-width="5"></path><text x="305.96" y="130.32" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">0</text><text x="342.55" y="101.32" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">30</text><text x="386.65" y="85.96" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">60</text><text x="433.35" y="85.96" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">90</text><text x="477.45" y="101.32" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">120</text><text x="514.04" y="130.32" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">150</text><text x="410" y="162" text-anchor="middle" style="font:700 21px var(--font-ui);fill:#1A1A1A">mV</text><path d="M290,200 v-7 a6,6 0 0 1 12,0 v7" fill="none" stroke="#1A1A1A" stroke-width="1.6"></path><line x1="310" y1="194" x2="324" y2="194" stroke="#1A1A1A" stroke-width="1.6"></line><line x1="332" y1="199" x2="346" y2="199" stroke="#1A1A1A" stroke-width="2.2"></line><text x="290" y="218" style="font:600 11.5px var(--font-num);fill:#1A1A1A">0,5</text><text x="530" y="198" text-anchor="end" style="font:600 11.5px var(--font-num);fill:#1A1A1A">0,3 V</text><text x="530" y="218" text-anchor="end" style="font:600 11.5px var(--font-num);fill:#1A1A1A">R = 500 Ω</text><g id="nmV" transform="rotate(-47.975 410 220)"><line x1="410" y1="224" x2="410" y2="94" stroke="#B42318" stroke-width="1.5"></line></g><path d="M395,222 A15 15 0 0 1 425,222 Z" fill="#202428"></path><rect x="278" y="232" width="264" height="40" rx="4" fill="url(#gFace)"></rect><clipPath id="cmV"><rect x="278" y="232" width="264" height="40" rx="4"></rect></clipPath><g id="LmV" clip-path="url(#cmV)"><line x1="408.98" y1="232" x2="408.98" y2="249" stroke="#1A1A1A" stroke-width="1.4"></line><text x="408.98" y="264" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">0</text><line x1="434.98" y1="232" x2="434.98" y2="242" stroke="#1A1A1A" stroke-width="1"></line><line x1="460.98" y1="232" x2="460.98" y2="242" stroke="#1A1A1A" stroke-width="1"></line><line x1="486.98" y1="232" x2="486.98" y2="242" stroke="#1A1A1A" stroke-width="1"></line><line x1="512.98" y1="232" x2="512.98" y2="242" stroke="#1A1A1A" stroke-width="1"></line><line x1="538.98" y1="232" x2="538.98" y2="249" stroke="#1A1A1A" stroke-width="1.4"></line><text x="538.98" y="264" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">5</text><line x1="564.98" y1="232" x2="564.98" y2="242" stroke="#1A1A1A" stroke-width="1"></line><line x1="590.98" y1="232" x2="590.98" y2="242" stroke="#1A1A1A" stroke-width="1"></line></g><line x1="410" y1="230" x2="410" y2="274" stroke="#B42318" stroke-width="1.6"></line><text x="284" y="269" style="font:600 10px var(--font-ui);fill:#7A7F86">лупа</text></g><g><rect x="566" y="40" width="284" height="240" rx="10" fill="url(#gBezel)"></rect><rect x="576" y="50" width="264" height="172" rx="4" fill="url(#gFace)"></rect><g stroke="#1A1A1A"><line x1="612.88" y1="134.35" x2="624.02" y2="144.39" stroke-width="1.4"></line><line x1="614.81" y1="132.25" x2="618.45" y2="135.68" stroke-width="0.6"></line><line x1="616.80" y1="130.19" x2="620.36" y2="133.70" stroke-width="0.6"></line><line x1="618.83" y1="128.17" x2="622.31" y2="131.76" stroke-width="0.6"></line><line x1="620.90" y1="126.20" x2="624.30" y2="129.87" stroke-width="0.6"></line><line x1="623.02" y1="124.28" x2="628.99" y2="131.01" stroke-width="1"></line><line x1="625.18" y1="122.41" x2="628.41" y2="126.22" stroke-width="0.6"></line><line x1="627.38" y1="120.58" x2="630.53" y2="124.47" stroke-width="0.6"></line><line x1="629.62" y1="118.81" x2="632.68" y2="122.76" stroke-width="0.6"></line><line x1="631.90" y1="117.08" x2="634.87" y2="121.10" stroke-width="0.6"></line><line x1="634.22" y1="115.41" x2="639.40" y2="122.76" stroke-width="1"></line><line x1="636.57" y1="113.78" x2="639.36" y2="117.93" stroke-width="0.6"></line><line x1="638.96" y1="112.21" x2="641.66" y2="116.42" stroke-width="0.6"></line><line x1="641.39" y1="110.70" x2="643.99" y2="114.97" stroke-width="0.6"></line><line x1="643.85" y1="109.24" x2="646.35" y2="113.56" stroke-width="0.6"></line><line x1="646.34" y1="107.83" x2="653.56" y2="120.98" stroke-width="1.4"></line><line x1="648.86" y1="106.48" x2="651.17" y2="110.92" stroke-width="0.6"></line><line x1="651.41" y1="105.19" x2="653.62" y2="109.68" stroke-width="0.6"></line><line x1="653.99" y1="103.95" x2="656.10" y2="108.49" stroke-width="0.6"></line><line x1="656.59" y1="102.78" x2="658.60" y2="107.36" stroke-width="0.6"></line><line x1="659.22" y1="101.66" x2="662.65" y2="109.98" stroke-width="1"></line><line x1="661.88" y1="100.60" x2="663.68" y2="105.26" stroke-width="0.6"></line><line x1="664.56" y1="99.60" x2="666.25" y2="104.30" stroke-width="0.6"></line><line x1="667.26" y1="98.66" x2="668.85" y2="103.40" stroke-width="0.6"></line><line x1="669.98" y1="97.78" x2="671.46" y2="102.55" stroke-width="0.6"></line><line x1="672.72" y1="96.96" x2="675.20" y2="105.61" stroke-width="1"></line><line x1="675.48" y1="96.20" x2="676.75" y2="101.04" stroke-width="0.6"></line><line x1="678.25" y1="95.51" x2="679.41" y2="100.37" stroke-width="0.6"></line><line x1="681.04" y1="94.87" x2="682.09" y2="99.76" stroke-width="0.6"></line><line x1="683.84" y1="94.30" x2="684.78" y2="99.21" stroke-width="0.6"></line><line x1="686.65" y1="93.79" x2="689.16" y2="108.58" stroke-width="1.4"></line><line x1="689.48" y1="93.35" x2="690.20" y2="98.29" stroke-width="0.6"></line><line x1="692.31" y1="92.97" x2="692.92" y2="97.93" stroke-width="0.6"></line><line x1="695.15" y1="92.65" x2="695.66" y2="97.62" stroke-width="0.6"></line><line x1="698.00" y1="92.39" x2="698.39" y2="97.38" stroke-width="0.6"></line><line x1="700.85" y1="92.20" x2="701.36" y2="101.19" stroke-width="1"></line><line x1="703.71" y1="92.07" x2="703.88" y2="97.07" stroke-width="0.6"></line><line x1="706.57" y1="92.01" x2="706.63" y2="97.01" stroke-width="0.6"></line><line x1="709.43" y1="92.01" x2="709.37" y2="97.01" stroke-width="0.6"></line><line x1="712.29" y1="92.07" x2="712.12" y2="97.07" stroke-width="0.6"></line><line x1="715.15" y1="92.20" x2="714.64" y2="101.19" stroke-width="1"></line><line x1="718.00" y1="92.39" x2="717.61" y2="97.38" stroke-width="0.6"></line><line x1="720.85" y1="92.65" x2="720.34" y2="97.62" stroke-width="0.6"></line><line x1="723.69" y1="92.97" x2="723.08" y2="97.93" stroke-width="0.6"></line><line x1="726.52" y1="93.35" x2="725.80" y2="98.29" stroke-width="0.6"></line><line x1="729.35" y1="93.79" x2="726.84" y2="108.58" stroke-width="1.4"></line><line x1="732.16" y1="94.30" x2="731.22" y2="99.21" stroke-width="0.6"></line><line x1="734.96" y1="94.87" x2="733.91" y2="99.76" stroke-width="0.6"></line><line x1="737.75" y1="95.51" x2="736.59" y2="100.37" stroke-width="0.6"></line><line x1="740.52" y1="96.20" x2="739.25" y2="101.04" stroke-width="0.6"></line><line x1="743.28" y1="96.96" x2="740.80" y2="105.61" stroke-width="1"></line><line x1="746.02" y1="97.78" x2="744.54" y2="102.55" stroke-width="0.6"></line><line x1="748.74" y1="98.66" x2="747.15" y2="103.40" stroke-width="0.6"></line><line x1="751.44" y1="99.60" x2="749.75" y2="104.30" stroke-width="0.6"></line><line x1="754.12" y1="100.60" x2="752.32" y2="105.26" stroke-width="0.6"></line><line x1="756.78" y1="101.66" x2="753.35" y2="109.98" stroke-width="1"></line><line x1="759.41" y1="102.78" x2="757.40" y2="107.36" stroke-width="0.6"></line><line x1="762.01" y1="103.95" x2="759.90" y2="108.49" stroke-width="0.6"></line><line x1="764.59" y1="105.19" x2="762.38" y2="109.68" stroke-width="0.6"></line><line x1="767.14" y1="106.48" x2="764.83" y2="110.92" stroke-width="0.6"></line><line x1="769.66" y1="107.83" x2="762.44" y2="120.98" stroke-width="1.4"></line><line x1="772.15" y1="109.24" x2="769.65" y2="113.56" stroke-width="0.6"></line><line x1="774.61" y1="110.70" x2="772.01" y2="114.97" stroke-width="0.6"></line><line x1="777.04" y1="112.21" x2="774.34" y2="116.42" stroke-width="0.6"></line><line x1="779.43" y1="113.78" x2="776.64" y2="117.93" stroke-width="0.6"></line><line x1="781.78" y1="115.41" x2="776.60" y2="122.76" stroke-width="1"></line><line x1="784.10" y1="117.08" x2="781.13" y2="121.10" stroke-width="0.6"></line><line x1="786.38" y1="118.81" x2="783.32" y2="122.76" stroke-width="0.6"></line><line x1="788.62" y1="120.58" x2="785.47" y2="124.47" stroke-width="0.6"></line><line x1="790.82" y1="122.41" x2="787.59" y2="126.22" stroke-width="0.6"></line><line x1="792.98" y1="124.28" x2="787.01" y2="131.01" stroke-width="1"></line><line x1="795.10" y1="126.20" x2="791.70" y2="129.87" stroke-width="0.6"></line><line x1="797.17" y1="128.17" x2="793.69" y2="131.76" stroke-width="0.6"></line><line x1="799.20" y1="130.19" x2="795.64" y2="133.70" stroke-width="0.6"></line><line x1="801.19" y1="132.25" x2="797.55" y2="135.68" stroke-width="0.6"></line><line x1="803.12" y1="134.35" x2="791.98" y2="144.39" stroke-width="1.4"></line></g><path d="M612.88,134.35 A128 128 0 0 1 803.12,134.35" fill="none" stroke="#1A1A1A" stroke-width=".9"></path><path d="M631.75,146.37 A106 106 0 0 1 784.25,146.37" fill="none" stroke="url(#gMirror)" stroke-width="5"></path><text x="603.96" y="130.32" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">0</text><text x="640.55" y="101.32" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">15</text><text x="684.65" y="85.96" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">30</text><text x="731.35" y="85.96" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">45</text><text x="775.45" y="101.32" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">60</text><text x="812.04" y="130.32" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">75</text><text x="708" y="162" text-anchor="middle" style="font:700 21px var(--font-ui);fill:#1A1A1A">mA</text><g fill="none" stroke="#1A1A1A" stroke-width="1.4"><path d="M594,186 v16"></path><path d="M588,190 l6,3 l6,-3 M588,195 l6,3 l6,-3"></path></g><line x1="608" y1="194" x2="622" y2="194" stroke="#1A1A1A" stroke-width="1.6"></line><line x1="630" y1="199" x2="644" y2="199" stroke="#1A1A1A" stroke-width="2.2"></line><text x="588" y="218" style="font:600 11.5px var(--font-num);fill:#1A1A1A">0,5</text><text x="828" y="198" text-anchor="end" style="font:600 11.5px var(--font-num);fill:#1A1A1A">0,15 A</text><text x="828" y="218" text-anchor="end" style="font:600 11.5px var(--font-num);fill:#1A1A1A">R = 1 Ω</text><g id="nmA" transform="rotate(-48.130 708 220)"><line x1="708" y1="224" x2="708" y2="94" stroke="#B42318" stroke-width="1.5"></line></g><path d="M693,222 A15 15 0 0 1 723,222 Z" fill="#202428"></path><rect x="576" y="232" width="264" height="40" rx="4" fill="url(#gFace)"></rect><clipPath id="cmA"><rect x="576" y="232" width="264" height="40" rx="4"></rect></clipPath><g id="LmA" clip-path="url(#cmA)"><line x1="710.63" y1="232" x2="710.63" y2="249" stroke="#1A1A1A" stroke-width="1.4"></line><text x="710.63" y="264" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">0</text><line x1="736.63" y1="232" x2="736.63" y2="242" stroke="#1A1A1A" stroke-width="1"></line><line x1="762.63" y1="232" x2="762.63" y2="242" stroke="#1A1A1A" stroke-width="1"></line><line x1="788.63" y1="232" x2="788.63" y2="242" stroke="#1A1A1A" stroke-width="1"></line><line x1="814.63" y1="232" x2="814.63" y2="242" stroke="#1A1A1A" stroke-width="1"></line><line x1="840.63" y1="232" x2="840.63" y2="249" stroke="#1A1A1A" stroke-width="1.4"></line><text x="840.63" y="264" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">5</text><line x1="866.63" y1="232" x2="866.63" y2="242" stroke="#1A1A1A" stroke-width="1"></line></g><line x1="708" y1="230" x2="708" y2="274" stroke="#B42318" stroke-width="1.6"></line><text x="582" y="269" style="font:600 10px var(--font-ui);fill:#7A7F86">лупа</text></g><rect x="884" y="48" width="64" height="26" rx="3" fill="#120B07" stroke="#4A515A"></rect><rect id="z1" x="888" y="52" width="56" height="18" rx="2" fill="#3A1D0E"></rect><text x="916" y="92" text-anchor="middle" class="eng sm">Z1</text><g id="kP1" class="knob" tabindex="0" role="slider" aria-label="Регулятор тока P1" aria-valuemin="0" aria-valuemax="100" style="cursor:ns-resize" aria-valuenow="34"><circle cx="916" cy="176" r="54" fill="transparent"></circle><line x1="889.84" y1="202.16" x2="885.59" y2="206.41" stroke="#C9CED6" stroke-width="1.4"></line><text x="879.94" y="216.06" text-anchor="middle" class="eng sm">0</text><line x1="884.45" y1="195.33" x2="881.89" y2="196.90" stroke="#C9CED6" stroke-width="0.8"></line><line x1="880.81" y1="187.43" x2="875.10" y2="189.29" stroke="#C9CED6" stroke-width="1.4"></line><line x1="879.11" y1="178.90" x2="876.12" y2="179.14" stroke="#C9CED6" stroke-width="0.8"></line><line x1="879.46" y1="170.21" x2="873.53" y2="169.27" stroke="#C9CED6" stroke-width="1.4"></line><text x="865.63" y="172.02" text-anchor="middle" class="eng sm">2</text><line x1="881.82" y1="161.84" x2="879.04" y2="160.69" stroke="#C9CED6" stroke-width="0.8"></line><line x1="886.07" y1="154.25" x2="881.21" y2="150.73" stroke="#C9CED6" stroke-width="1.4"></line><line x1="891.97" y1="147.86" x2="890.02" y2="145.58" stroke="#C9CED6" stroke-width="0.8"></line><line x1="899.20" y1="143.03" x2="896.48" y2="137.69" stroke="#C9CED6" stroke-width="1.4"></line><text x="892.85" y="134.56" text-anchor="middle" class="eng sm">4</text><line x1="907.36" y1="140.02" x2="906.66" y2="137.11" stroke="#C9CED6" stroke-width="0.8"></line><line x1="916.00" y1="139.00" x2="916.00" y2="133.00" stroke="#C9CED6" stroke-width="1.4"></line><line x1="924.64" y1="140.02" x2="925.34" y2="137.11" stroke="#C9CED6" stroke-width="0.8"></line><line x1="932.80" y1="143.03" x2="935.52" y2="137.69" stroke="#C9CED6" stroke-width="1.4"></line><text x="939.15" y="134.56" text-anchor="middle" class="eng sm">6</text><line x1="940.03" y1="147.86" x2="941.98" y2="145.58" stroke="#C9CED6" stroke-width="0.8"></line><line x1="945.93" y1="154.25" x2="950.79" y2="150.73" stroke="#C9CED6" stroke-width="1.4"></line><line x1="950.18" y1="161.84" x2="952.96" y2="160.69" stroke="#C9CED6" stroke-width="0.8"></line><line x1="952.54" y1="170.21" x2="958.47" y2="169.27" stroke="#C9CED6" stroke-width="1.4"></line><text x="966.37" y="172.02" text-anchor="middle" class="eng sm">8</text><line x1="952.89" y1="178.90" x2="955.88" y2="179.14" stroke="#C9CED6" stroke-width="0.8"></line><line x1="951.19" y1="187.43" x2="956.90" y2="189.29" stroke="#C9CED6" stroke-width="1.4"></line><line x1="947.55" y1="195.33" x2="950.11" y2="196.90" stroke="#C9CED6" stroke-width="0.8"></line><line x1="942.16" y1="202.16" x2="946.41" y2="206.41" stroke="#C9CED6" stroke-width="1.4"></line><text x="952.06" y="216.06" text-anchor="middle" class="eng sm">10</text><circle cx="916" cy="176" r="32" fill="#15181C"></circle><g class="rot" transform="rotate(-44.52 916 176)"><circle cx="916" cy="176" r="30" fill="url(#gKnob)" stroke="#07080A"></circle><line x1="916.00" y1="146.00" x2="916.00" y2="150.00" stroke="#454B53" stroke-width="1.3"></line><line x1="922.24" y1="146.66" x2="921.41" y2="150.57" stroke="#454B53" stroke-width="1.3"></line><line x1="928.20" y1="148.59" x2="926.58" y2="152.25" stroke="#454B53" stroke-width="1.3"></line><line x1="933.63" y1="151.73" x2="931.28" y2="154.97" stroke="#454B53" stroke-width="1.3"></line><line x1="938.29" y1="155.93" x2="935.32" y2="158.60" stroke="#454B53" stroke-width="1.3"></line><line x1="941.98" y1="161.00" x2="938.52" y2="163.00" stroke="#454B53" stroke-width="1.3"></line><line x1="944.53" y1="166.73" x2="940.73" y2="167.97" stroke="#454B53" stroke-width="1.3"></line><line x1="945.84" y1="172.86" x2="941.86" y2="173.28" stroke="#454B53" stroke-width="1.3"></line><line x1="945.84" y1="179.14" x2="941.86" y2="178.72" stroke="#454B53" stroke-width="1.3"></line><line x1="944.53" y1="185.27" x2="940.73" y2="184.03" stroke="#454B53" stroke-width="1.3"></line><line x1="941.98" y1="191.00" x2="938.52" y2="189.00" stroke="#454B53" stroke-width="1.3"></line><line x1="938.29" y1="196.07" x2="935.32" y2="193.40" stroke="#454B53" stroke-width="1.3"></line><line x1="933.63" y1="200.27" x2="931.28" y2="197.03" stroke="#454B53" stroke-width="1.3"></line><line x1="928.20" y1="203.41" x2="926.58" y2="199.75" stroke="#454B53" stroke-width="1.3"></line><line x1="922.24" y1="205.34" x2="921.41" y2="201.43" stroke="#454B53" stroke-width="1.3"></line><line x1="916.00" y1="206.00" x2="916.00" y2="202.00" stroke="#454B53" stroke-width="1.3"></line><line x1="909.76" y1="205.34" x2="910.59" y2="201.43" stroke="#454B53" stroke-width="1.3"></line><line x1="903.80" y1="203.41" x2="905.42" y2="199.75" stroke="#454B53" stroke-width="1.3"></line><line x1="898.37" y1="200.27" x2="900.72" y2="197.03" stroke="#454B53" stroke-width="1.3"></line><line x1="893.71" y1="196.07" x2="896.68" y2="193.40" stroke="#454B53" stroke-width="1.3"></line><line x1="890.02" y1="191.00" x2="893.48" y2="189.00" stroke="#454B53" stroke-width="1.3"></line><line x1="887.47" y1="185.27" x2="891.27" y2="184.03" stroke="#454B53" stroke-width="1.3"></line><line x1="886.16" y1="179.14" x2="890.14" y2="178.72" stroke="#454B53" stroke-width="1.3"></line><line x1="886.16" y1="172.86" x2="890.14" y2="173.28" stroke="#454B53" stroke-width="1.3"></line><line x1="887.47" y1="166.73" x2="891.27" y2="167.97" stroke="#454B53" stroke-width="1.3"></line><line x1="890.02" y1="161.00" x2="893.48" y2="163.00" stroke="#454B53" stroke-width="1.3"></line><line x1="893.71" y1="155.93" x2="896.68" y2="158.60" stroke="#454B53" stroke-width="1.3"></line><line x1="898.37" y1="151.73" x2="900.72" y2="154.97" stroke="#454B53" stroke-width="1.3"></line><line x1="903.80" y1="148.59" x2="905.42" y2="152.25" stroke="#454B53" stroke-width="1.3"></line><line x1="909.76" y1="146.66" x2="910.59" y2="150.57" stroke="#454B53" stroke-width="1.3"></line><circle cx="916" cy="176" r="21" fill="url(#gKnobCap)"></circle><circle cx="916" cy="156" r="3" fill="#F4F6F8"></circle></g></g><text x="916" y="248" text-anchor="middle" class="eng">P1</text><text x="916" y="264" text-anchor="middle" class="eng sm">регулятор тока</text><circle cx="292" cy="326" r="13" fill="#B31B1B" stroke="#4A0A0A"></circle><circle cx="292" cy="326" r="5" fill="#2A0606"></circle><text x="292" y="366" text-anchor="middle" class="eng sm">Z11</text><circle cx="330" cy="326" r="13" fill="#B31B1B" stroke="#4A0A0A"></circle><circle cx="330" cy="326" r="5" fill="#2A0606"></circle><text x="330" y="366" text-anchor="middle" class="eng sm">Z12</text><circle cx="368" cy="326" r="13" fill="#B31B1B" stroke="#4A0A0A"></circle><circle cx="368" cy="326" r="5" fill="#2A0606"></circle><text x="368" y="366" text-anchor="middle" class="eng sm">Z13</text><g id="kW3" class="hit key" tabindex="0" role="switch" aria-label="Клавиша W3" aria-checked="false">
+    <rect x="410" y="302" width="48" height="50" rx="6" fill="#121417" stroke="#4A515A"></rect>
+    <g class="cap" transform=""><rect x="416" y="308" width="36" height="34" rx="4" fill="url(#gKey)" stroke="#0A0B0D"></rect><rect x="420" y="311" width="28" height="4" rx="2" fill="#fff" opacity=".18"></rect></g>
+    <text x="434" y="368" text-anchor="middle" class="eng">W3</text></g><rect x="474" y="296" width="242" height="86" rx="8" fill="none" stroke="#4A515A" stroke-dasharray="3 4"></rect><g id="schemeBox" transform="translate(486,305) scale(.68)" style="color:#7D858F"><g stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M10,12 H64 M76,12 H112 M152,12 H190 V38 M184,50 L190,38 M190,52 V76"></path><line x1="64" y1="1" x2="64" y2="23" stroke-width="2"></line><line x1="76" y1="6" x2="76" y2="18" stroke-width="3.2"></line><rect x="112" y="6" width="40" height="12"></rect><path d="M116,24 L150,0 M150,0 l-7,1 M150,0 l-2,6"></path><rect x="118" y="70" width="40" height="12"></rect><path d="M10,12 V76 H34 M50,76 H62 M84,76 H118 M158,76 H190"></path><circle cx="42" cy="76" r="8"></circle><rect x="62" y="70" width="22" height="12"></rect><path d="M22,76 V96 H52 M68,96 H112 M148,96 H176 V76"></path><circle cx="60" cy="96" r="8"></circle><rect x="112" y="90" width="36" height="12"></rect></g><circle cx="22" cy="76" r="2.4" fill="currentColor"></circle><circle cx="176" cy="76" r="2.4" fill="currentColor"></circle><text x="42" y="80" text-anchor="middle" font-family="Manrope" font-weight="700" font-size="10.5" fill="currentColor">A</text><text x="60" y="100" text-anchor="middle" font-family="Manrope" font-weight="700" font-size="10.5" fill="currentColor">V</text></g><text id="schemeLbl" x="694" y="336" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#AEB5BF">рис. 5</text><text id="schemeLtr" x="694" y="360" text-anchor="middle" style="font:800 20px var(--font-ui);fill:#AEB5BF">б</text><g id="kW2" class="hit key" tabindex="0" role="switch" aria-label="Клавиша W2" aria-checked="false">
+    <rect x="730" y="302" width="48" height="50" rx="6" fill="#121417" stroke="#4A515A"></rect>
+    <g class="cap" transform=""><rect x="736" y="308" width="36" height="34" rx="4" fill="url(#gKey)" stroke="#0A0B0D"></rect><rect x="740" y="311" width="28" height="4" rx="2" fill="#fff" opacity=".18"></rect></g>
+    <text x="754" y="368" text-anchor="middle" class="eng">W2</text></g><rect x="796" y="314" width="72" height="26" rx="4" fill="#30343A"></rect><text x="832" y="331" text-anchor="middle" style="font:700 11px var(--font-ui);fill:#C9CED6;letter-spacing:.1em">FPM-01</text><g id="kW1" class="hit key" tabindex="0" role="switch" aria-label="Клавиша W1 СЕТЬ" aria-checked="false">
+    <rect x="892" y="302" width="48" height="50" rx="6" fill="#121417" stroke="#4A515A"></rect>
+    <g class="cap" transform=""><rect x="898" y="308" width="36" height="34" rx="4" fill="url(#gKey)" stroke="#0A0B0D"></rect><rect x="902" y="311" width="28" height="4" rx="2" fill="#fff" opacity=".18"></rect></g>
+    <text x="916" y="368" text-anchor="middle" class="eng">W1 СЕТЬ</text></g><rect x="250" y="404" width="730" height="302" rx="14" fill="url(#gBody)" stroke="#AEB8B1"></rect><text x="266" y="428" class="lab">МИКРОМЕТР МК-25, ЦЕНА ДЕЛЕНИЯ 0,01 мм</text><path d="M352,592 C352,700 583,700 583,600" fill="none" stroke="#3C4652" stroke-width="34"></path><text x="468" y="679" text-anchor="middle" style="font:600 11px var(--font-ui);fill:#E5E9EE">0–25 мм   0,01 мм</text><rect x="326" y="542" width="50" height="52" rx="6" fill="#3C4652"></rect><rect x="366" y="554" width="16" height="24" fill="url(#gSteel)"></rect><rect id="spindle" x="482.80" y="556" width="83.20" height="20" fill="url(#gSteel)"></rect><rect x="552" y="534" width="62" height="64" rx="8" fill="#3C4652"></rect><g id="wireSec"></g><clipPath id="cSleeve"><rect id="cSleeveR" x="610" y="500" width="118.83" height="140"></rect></clipPath><g clip-path="url(#cSleeve)"><rect x="612" y="534" width="320" height="64" fill="url(#gSteel)"></rect><line x1="616" y1="566" x2="930" y2="566" stroke="#1A1D21" stroke-width="1.3"></line><line x1="628" y1="566" x2="628" y2="549" stroke="#1A1D21" stroke-width="1.4"></line><text x="628" y="545" text-anchor="middle" style="font:600 13px var(--font-num);fill:#1A1D21">0</text><line x1="670" y1="566" x2="670" y2="580" stroke="#1A1D21" stroke-width="1.2"></line><line x1="712" y1="566" x2="712" y2="549" stroke="#1A1D21" stroke-width="1.4"></line><text x="712" y="545" text-anchor="middle" style="font:600 13px var(--font-num);fill:#1A1D21">1</text><line x1="754" y1="566" x2="754" y2="580" stroke="#1A1D21" stroke-width="1.2"></line><line x1="796" y1="566" x2="796" y2="549" stroke="#1A1D21" stroke-width="1.4"></line><text x="796" y="545" text-anchor="middle" style="font:600 13px var(--font-num);fill:#1A1D21">2</text><line x1="838" y1="566" x2="838" y2="580" stroke="#1A1D21" stroke-width="1.2"></line><line x1="880" y1="566" x2="880" y2="549" stroke="#1A1D21" stroke-width="1.4"></line><text x="880" y="545" text-anchor="middle" style="font:600 13px var(--font-num);fill:#1A1D21">3</text><line x1="922" y1="566" x2="922" y2="580" stroke="#1A1D21" stroke-width="1.2"></line><line x1="628" y1="566" x2="628" y2="580" stroke="#1A1D21" stroke-width="1.2"></line></g><g id="thimble" class="hit drag" tabindex="0" role="slider" aria-label="Барабан микрометра" style="cursor:ns-resize" aria-valuenow="1.200"><rect x="728.83" y="474" width="112" height="184" rx="6" fill="url(#gThim)" stroke="#5B636B"></rect><rect x="728.83" y="474" width="24" height="184" rx="4" fill="#fff" opacity=".22"></rect><line x1="784.83" y1="512.22" x2="838.83" y2="512.22" stroke="#5B636B" stroke-width="1" opacity="0.57"></line><line x1="784.83" y1="526.00" x2="838.83" y2="526.00" stroke="#5B636B" stroke-width="1" opacity="0.63"></line><line x1="784.83" y1="541.00" x2="838.83" y2="541.00" stroke="#5B636B" stroke-width="1" opacity="0.67"></line><line x1="784.83" y1="556.75" x2="838.83" y2="556.75" stroke="#5B636B" stroke-width="1" opacity="0.70"></line><line x1="784.83" y1="572.78" x2="838.83" y2="572.78" stroke="#5B636B" stroke-width="1" opacity="0.70"></line><line x1="784.83" y1="588.61" x2="838.83" y2="588.61" stroke="#5B636B" stroke-width="1" opacity="0.68"></line><line x1="784.83" y1="603.76" x2="838.83" y2="603.76" stroke="#5B636B" stroke-width="1" opacity="0.64"></line><line x1="784.83" y1="617.75" x2="838.83" y2="617.75" stroke="#5B636B" stroke-width="1" opacity="0.58"></line><line x1="784.83" y1="630.17" x2="838.83" y2="630.17" stroke="#5B636B" stroke-width="1" opacity="0.50"></line><line x1="784.83" y1="640.65" x2="838.83" y2="640.65" stroke="#5B636B" stroke-width="1" opacity="0.41"></line><line x1="784.83" y1="648.85" x2="838.83" y2="648.85" stroke="#5B636B" stroke-width="1" opacity="0.30"></line><line x1="784.83" y1="654.54" x2="838.83" y2="654.54" stroke="#5B636B" stroke-width="1" opacity="0.19"></line><line x1="784.83" y1="476.82" x2="838.83" y2="476.82" stroke="#5B636B" stroke-width="1" opacity="0.17"></line><line x1="784.83" y1="482.10" x2="838.83" y2="482.10" stroke="#5B636B" stroke-width="1" opacity="0.29"></line><line x1="784.83" y1="489.93" x2="838.83" y2="489.93" stroke="#5B636B" stroke-width="1" opacity="0.39"></line><line x1="784.83" y1="500.08" x2="838.83" y2="500.08" stroke="#5B636B" stroke-width="1" opacity="0.49"></line><line x1="728.83" y1="478.39" x2="746.83" y2="478.39" stroke="#15181C" stroke-width="1.3" opacity="0.31"></line><text x="751.83" y="479.76" style="font:600 8.9px var(--font-num);fill:#15181C" opacity="0.31">10</text><line x1="728.83" y1="482.60" x2="738.83" y2="482.60" stroke="#15181C" stroke-width="0.9" opacity="0.42"></line><line x1="728.83" y1="488.13" x2="738.83" y2="488.13" stroke="#15181C" stroke-width="0.9" opacity="0.53"></line><line x1="728.83" y1="494.88" x2="738.83" y2="494.88" stroke="#15181C" stroke-width="0.9" opacity="0.63"></line><line x1="728.83" y1="502.75" x2="738.83" y2="502.75" stroke="#15181C" stroke-width="0.9" opacity="0.73"></line><line x1="728.83" y1="511.63" x2="746.83" y2="511.63" stroke="#15181C" stroke-width="1.3" opacity="0.81"></line><text x="751.83" y="515.26" style="font:600 11.9px var(--font-num);fill:#15181C" opacity="0.81">15</text><line x1="728.83" y1="521.36" x2="738.83" y2="521.36" stroke="#15181C" stroke-width="0.9" opacity="0.87"></line><line x1="728.83" y1="531.79" x2="738.83" y2="531.79" stroke="#15181C" stroke-width="0.9" opacity="0.93"></line><line x1="728.83" y1="542.76" x2="738.83" y2="542.76" stroke="#15181C" stroke-width="0.9" opacity="0.97"></line><line x1="728.83" y1="554.10" x2="738.83" y2="554.10" stroke="#15181C" stroke-width="0.9" opacity="0.99"></line><line x1="728.83" y1="565.63" x2="746.83" y2="565.63" stroke="#15181C" stroke-width="1.3" opacity="1.00"></line><text x="751.83" y="570.13" style="font:600 13.0px var(--font-num);fill:#15181C" opacity="1.00">20</text><line x1="728.83" y1="577.17" x2="738.83" y2="577.17" stroke="#15181C" stroke-width="0.9" opacity="0.99"></line><line x1="728.83" y1="588.52" x2="738.83" y2="588.52" stroke="#15181C" stroke-width="0.9" opacity="0.97"></line><line x1="728.83" y1="599.53" x2="738.83" y2="599.53" stroke="#15181C" stroke-width="0.9" opacity="0.93"></line><line x1="728.83" y1="610.00" x2="738.83" y2="610.00" stroke="#15181C" stroke-width="0.9" opacity="0.88"></line><line x1="728.83" y1="619.78" x2="746.83" y2="619.78" stroke="#15181C" stroke-width="1.3" opacity="0.81"></line><text x="751.83" y="623.43" style="font:600 11.9px var(--font-num);fill:#15181C" opacity="0.81">25</text><line x1="728.83" y1="628.71" x2="738.83" y2="628.71" stroke="#15181C" stroke-width="0.9" opacity="0.73"></line><line x1="728.83" y1="636.65" x2="738.83" y2="636.65" stroke="#15181C" stroke-width="0.9" opacity="0.64"></line><line x1="728.83" y1="643.48" x2="738.83" y2="643.48" stroke="#15181C" stroke-width="0.9" opacity="0.54"></line><line x1="728.83" y1="649.09" x2="738.83" y2="649.09" stroke="#15181C" stroke-width="0.9" opacity="0.43"></line><line x1="728.83" y1="653.38" x2="746.83" y2="653.38" stroke="#15181C" stroke-width="1.3" opacity="0.31"></line><text x="751.83" y="654.79" style="font:600 9.0px var(--font-num);fill:#15181C" opacity="0.31">30</text><rect x="840.83" y="542" width="44" height="48" rx="5" fill="url(#gThim)" stroke="#5B636B"></rect><line x1="845.83" y1="544" x2="845.83" y2="588" stroke="#6E767E" stroke-width=".8"></line><line x1="850.83" y1="544" x2="850.83" y2="588" stroke="#6E767E" stroke-width=".8"></line><line x1="855.83" y1="544" x2="855.83" y2="588" stroke="#6E767E" stroke-width=".8"></line><line x1="860.83" y1="544" x2="860.83" y2="588" stroke="#6E767E" stroke-width=".8"></line><line x1="865.83" y1="544" x2="865.83" y2="588" stroke="#6E767E" stroke-width=".8"></line><line x1="870.83" y1="544" x2="870.83" y2="588" stroke="#6E767E" stroke-width=".8"></line><line x1="875.83" y1="544" x2="875.83" y2="588" stroke="#6E767E" stroke-width=".8"></line><line x1="880.83" y1="544" x2="880.83" y2="588" stroke="#6E767E" stroke-width=".8"></line><text x="844.83" y="606" style="font:600 10.5px var(--font-ui);fill:#4E5852">трещотка</text></g><text x="266" y="700" style="font:500 11px var(--font-ui);fill:#5B655F">отсчёт = деления стебля (мм и 0,5 мм) + деления барабана × 0,01 мм</text></svg>
+      </div>
+      <div class="controls">
+        <div class="ctl mob"><button class="btn small" id="fitBtn" aria-pressed="false">Вписать в экран</button><span class="note-chip rot-hint">Поверните телефон горизонтально, так установка видна целиком</span><span class="note-chip">Ручки крутятся движением пальца вверх и вниз прямо по ручке</span></div>
+        <div class="ctl">
+          <button class="btn small" id="plugBtn" aria-pressed="false">Вилка в розетку 220 В</button>
+        </div>
+        <div class="ctl">
+          <span class="lbl">Участок проволоки</span>
+          <select id="secSel" aria-label="Участок проволоки для микрометра"></select>
+          <button class="btn small" id="wireBtn">Вставить в микрометр</button>
+        </div>
+        <span class="note-chip">Барабан микрометра, ручка P1 и кронштейн двигаются перетаскиванием вверх и вниз или колёсиком, с Shift точнее. Клавиши нажимаются мышкой</span>
+      </div>
+    </div>
+
+    <aside class="col">
+      <div class="panel">
+        <h3>Микрометр</h3>
+        <div class="dline">
+          <label class="field"><span>Участок <b id="secLbl">1</b>, d, мм</span><input id="recD" inputmode="decimal"></label>
+          <button class="btn primary" id="recDBtn">В таблицу 1</button>
+        </div>
+        <p class="tiny muted" style="margin:8px 0 0">Отсчёт: целые миллиметры и половины по стеблю плюс сотые по барабану</p>
+      </div>
+      <div class="panel">
+        <h3>Журнал отсчётов</h3>
+        <div class="rec-grid">
+          <label class="field">l, см<input id="recL" inputmode="decimal"></label>
+          <label class="field">U, дел<input id="recU" inputmode="decimal"></label>
+          <label class="field">J, дел<input id="recJ" inputmode="decimal"></label>
+        </div>
+        <button class="btn primary" id="recBtn" style="width:100%;justify-content:center;margin-top:10px">Записать отсчёт</button>
+        <div class="jr-wrap">
+          <table class="jr">
+            <thead><tr><th>№</th><th>l, см</th><th>U, дел</th><th>J, дел</th><th></th></tr></thead>
+            <tbody id="jrBody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="jrEmpty">Пока пусто. Показания приборов записывают в делениях шкалы, как велит п. 4 ж</div>
+      </div>
+      <div class="panel">
+        <h3>Паспорт установки</h3>
+        <dl class="kv">
+          <dt>Проволока</dt><dd>нихром, 50 см</dd>
+          <dt>Шкала колонки</dt><dd>цена 1 мм</dd>
+          <dt>Микрометр</dt><dd>МК-25, 0,01 мм</dd>
+          <dt>Приборы</dt><dd>данные на шкалах</dd>
+        </dl>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ РАСЧЁТ ============ -->
+<section class="view" id="v-calc" hidden>
+  <div class="calc">
+    <div class="col">
+      <div class="panel">
+        <h2>1. Диаметр проволоки</h2>
+        <div class="tblwrap"><table class="lab" style="min-width:760px"><tbody id="dBody"></tbody></table></div>
+        <div class="grid2" style="margin-top:12px" id="dCalc"></div>
+      </div>
+      <div class="panel">
+        <h2>2. Характеристики приборов</h2>
+        <div class="tblwrap"><table class="lab" style="min-width:520px">
+          <thead><tr><th class="l">Параметр</th><th>Милливольтметр</th><th>Миллиамперметр</th></tr></thead>
+          <tbody id="chBody"></tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h2>3. Поправки и выбор схемы</h2>
+        <div class="formula" id="corrBox"></div>
+      </div>
+      <div class="panel">
+        <h2>4. Результаты измерения тока и напряжения</h2>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <button class="btn small" id="moveBtn">Перенести отсчёты из журнала</button>
+          <span class="tiny muted">Переносятся только сырые деления, перевод в мВ и мА делается вручную</span>
+        </div>
+        <div class="blocks" id="blkBox"></div>
+      </div>
+      <div class="panel">
+        <h2>График U = f(J)</h2>
+        <svg id="graph" viewBox="0 0 660 400" aria-label="График зависимости напряжения от тока для трёх длин проволоки"></svg>
+        <div class="legend" id="legend"></div>
+        <p class="tiny muted" style="margin:8px 0 0">Точки берутся из столбцов U, мВ и J, мА. Прямая проводится через начало координат и точку (J, U), которую вы выбрали по графику в таблице 5</p>
+      </div>
+      <div class="panel">
+        <h2>5. Сопротивление проволоки</h2>
+        <div class="tblwrap"><table class="lab" style="min-width:560px"><tbody id="rBody"></tbody></table></div>
+      </div>
+      <div class="panel">
+        <h2>6. Удельное сопротивление</h2>
+        <div class="tblwrap"><table class="lab" style="min-width:520px"><tbody id="rhoBody"></tbody></table></div>
+        <div class="formula" style="margin-top:12px" id="rhoRes"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <h2>Расчётные формулы</h2>
+        <div class="formula" id="fBox"></div>
+      </div>
+      <div class="panel">
+        <h2>Вывод</h2>
+        <textarea class="conc" id="conc" placeholder="Какую схему выбрали и почему, каков результат, что вносит основной вклад в погрешность ρ и с какой точностью достаточно измерять сопротивление"></textarea>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ТЕОРИЯ ============ -->
+<section class="view" id="v-theory" hidden>
+  <div class="theory">
+    <div class="panel prose">
+      <h2>Обработка результатов эксперимента</h2>
+      <h3>Прямые и косвенные измерения</h3>
+      <p><b>Прямые</b> измерения производятся приборами, которые измеряют саму величину: массу весами, длину линейкой, время секундомером. <b>Косвенные</b> дают результат на основании прямых измерений других величин, связанных с искомой функциональной зависимостью: плотность по массе и объёму, сопротивление по току и напряжению.</p>
+      <p>Абсолютная погрешность Δx = |x<sub>изм</sub> − x<sub>ист</sub>| (1.1), относительная δ<sub>x</sub> = Δx/x<sub>ист</sub> × 100 % (1.2). Истинное значение неизвестно, поэтому погрешности на практике не вычисляются, а оцениваются, и редко точнее чем на 20–30 %.</p>
+      <h3>Виды погрешностей</h3>
+      <ul>
+        <li><b>Грубые (промахи)</b> возникают от невнимания или плохих условий наблюдения. Такие измерения отбрасывают</li>
+        <li><b>Систематические</b> сохраняют величину и знак во время эксперимента: неравномерная шкала, сдвиг нуля, сама постановка опыта. Результаты колеблются не вокруг истинного значения, а вокруг смещённого</li>
+        <li><b>Случайные</b> меняют величину и знак от опыта к опыту, их влияние невозможно учесть заранее</li>
+      </ul>
+      <h3>Систематические погрешности приборов</h3>
+      <p>Для электроизмерительных приборов они определяются классом точности: амперметр класса 0,2 даёт погрешность не больше 0,2 % от тока <b>полной шкалы</b>. Если класс неизвестен, Δx принимают равной 0,5 цены наименьшего деления. Для приборов со шкалой (линейка, термометр, секундомер) погрешность равна половине цены деления, для штангенциркуля цене деления нониуса, у микрометра она составляет 0,01 мм. Доли деления отсчитываются на глаз, при этом луч зрения должен быть перпендикулярен шкале, для этого на многих приборах есть зеркало.</p>
+      <h3>Случайные погрешности</h3>
+      <p>Наилучшее значение измеряемой величины это среднее арифметическое, а его стандартная погрешность оценивается так:</p>
+      <div class="eq"><math display="block"><mover><mi>x</mi><mo>‾</mo></mover><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msub><mi>x</mi><mi>i</mi></msub><mspace width="0.8em"/><mtext>(3.1)</mtext><mspace width="2em"/><mi>Δ</mi><mi>x</mi><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><msqrt><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msup><mrow><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo>‾</mo></mover><mo>)</mo></mrow><mn>2</mn></msup></msqrt><mspace width="0.8em"/><mtext>(3.2)</mtext></math></div>
+      <p>Результат записывают как x = x<sub>ср</sub> ± Δx (3.3). С вероятностью 68 % ошибка лежит в интервале ±Δx, с вероятностью 95 % в интервале ±2Δx, с вероятностью 99,7 % в интервале ±3Δx. Формула (3.2) работает, когда опытов не меньше 4–5.</p>
+      <h3>Сложение погрешностей</h3>
+      <div class="eq"><math display="block"><msubsup><mi>Δ</mi><mi>полн</mi><mn>2</mn></msubsup><mo>=</mo><msubsup><mi>Δ</mi><mi>случ</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>Δ</mi><mi>сист</mi><mn>2</mn></msubsup><mspace width="0.8em"/><mtext>(4.1)</mtext></math></div>
+      <p>Погрешности складываются как катеты прямоугольного треугольника. Если одна из них вдвое меньше другой, то Δ<sub>полн</sub> ≈ 1,12 Δ<sub>сист</sub>, то есть меньшая почти ничего не добавляет. Поэтому если случайная ошибка хотя бы вдвое меньше систематической, многократные измерения не нужны, достаточно 2–3, чтобы убедиться, что она действительно мала.</p>
+      <h3>Косвенные измерения</h3>
+      <p>Для A = B ± C погрешности складываются квадратично: ΔA = √((ΔB)² + (ΔC)²) (5.2). Для произведения и частного складываются квадратично относительные погрешности (5.4), а для A = B<sup>β</sup>C<sup>γ</sup>E<sup>ε</sup>…</p>
+      <div class="eq"><math display="block"><msub><mi>δ</mi><mi>A</mi></msub><mo>=</mo><msqrt><msup><mi>β</mi><mn>2</mn></msup><msup><mrow><mo>(</mo><mfrac><mrow><mi>Δ</mi><mi>B</mi></mrow><mover><mi>B</mi><mo>‾</mo></mover></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mi>γ</mi><mn>2</mn></msup><msup><mrow><mo>(</mo><mfrac><mrow><mi>Δ</mi><mi>C</mi></mrow><mover><mi>C</mi><mo>‾</mo></mover></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mo>+</mo><mo>…</mo></msqrt><mspace width="0.8em"/><mtext>(5.6)</mtext></math></div>
+      <p>В общем случае A = f(B, C, E…) погрешность находят через частные производные (5.8), а для произведений и степеней удобнее сначала прологарифмировать и найти δ (5.9). Отсюда следствия: избегать измерений, где результат это разность двух больших чисел; при обработке по (5.3) мерить все величины с примерно одинаковой относительной точностью; главное внимание уделять величине с наибольшим показателем степени. Если величина в формуле не измеряется и погрешность не указана, её считают равной 0,5 единицы наименьшего разряда.</p>
+      <h3>Запись и округление</h3>
+      <p>Погрешность округляют до двух значащих цифр, если первая из них единица, и до одной во всех остальных случаях: ± 3; ± 0,2; ± 0,08; ± 0,14. Результат записывают до того же разряда, что и погрешность: 1,2 ± 0,2; 1,24 ± 0,03; 1,243 ± 0,012. Нули в конце значащие: m = (0,900 ± 0,004) г.</p>
+      <p>При сложении и вычитании оставляют столько десятичных знаков, сколько в наименее точном числе, при умножении и делении столько значащих цифр, сколько в числе с наименьшим их количеством. В промежуточных расчётах сохраняют один лишний знак. Если отбрасываемая цифра ровно 5 и за ней ничего нет, округляют до чётной: 0,435 = 0,44; 0,465 = 0,46.</p>
+      <h3>Графики</h3>
+      <p>Независимую переменную откладывают по оси абсцисс, функцию по оси ординат, у осей указывают величину и единицы. Масштаб выбирают удобным, чтобы точки занимали всю площадь листа. Через точки проводят плавную прямую или кривую так, чтобы точки распределились по обе стороны от неё равномерно. Сильно выпавшую точку отбрасывают и проверяют измерение на промах.</p>
+    </div>
+
+    <div class="panel prose">
+      <h3 style="margin-top:0">Электроизмерительные приборы</h3>
+      <p>Амперметр включают в цепь последовательно, вольтметр параллельно. Это один и тот же гальванометр с разной градуировкой: у амперметра внутреннее сопротивление снижают <b>шунтом</b>, у вольтметра повышают <b>добавочным сопротивлением</b>. Включение прибора всегда перераспределяет токи и напряжения, поэтому амперметр должен иметь малое сопротивление, а вольтметр большое.</p>
+      <p><b>Магнитоэлектрическая система:</b> рамка с током в поле постоянного магнита. Вращающий момент M = BSNJ уравновешивается пружинами M<sub>пр</sub> = kα, отсюда α = (BSN/k)J, шкала равномерная. Высокая точность (класс до 0,05), высокая чувствительность, малое потребление, устойчивость к перегрузкам, малая чувствительность к внешним полям.</p>
+      <p><b>Электромагнитная система:</b> ферромагнитный сердечник втягивается в катушку с током независимо от направления тока, поэтому прибор работает и на переменном токе. α ~ J², шкала неравномерная. Проста и надёжна, но точность низкая (класс 1,0…2,5), есть чувствительность к внешним полям и непригодность для малых токов.</p>
+      <p><b>Характеристики:</b> предел измерения x<sub>П</sub>; цена деления x<sub>П</sub>/n (9.1); чувствительность S = Δn/Δx (9.3); класс точности γ = Δx<sub>M</sub>/x<sub>П</sub> × 100 % (9.4), откуда Δx<sub>M</sub> = γx<sub>П</sub>/100 % (9.5); текущая относительная погрешность δ = Δx<sub>M</sub>/x × 100 % (9.6). Например, ток 25 мА, измеренный миллиамперметром класса 0,5 со шкалой 100 мА, имеет Δ = 0,5 мА и δ = 2 %. Поэтому стрелка при измерении должна заходить за середину шкалы.</p>
+      <h3>Метод измерения</h3>
+      <p>Удельное сопротивление однородной проволоки ρ = R<sub>пр</sub>S/l, где R<sub>пр</sub> сопротивление отрезка длиной l, S площадь сечения. Сопротивление измеряют косвенно, по закону Ома, одной из двух схем:</p>
+      <figure>
+        <svg viewBox="0 0 470 150" style="width:100%;height:auto;color:#1F2722" aria-label="Схемы рис. 5, а и б">
+          <g id="figA" transform="translate(14,18)"></g>
+          <g id="figB" transform="translate(254,18)"></g>
+          <text x="114" y="146" text-anchor="middle" font-family="Manrope" font-size="13" fill="#1F2722">а</text>
+          <text x="354" y="146" text-anchor="middle" font-family="Manrope" font-size="13" fill="#1F2722">б</text>
+        </svg>
+        <figcaption>Рис. 5. R переменное сопротивление, R<sub>V</sub> сопротивление вольтметра, R<sub>A</sub> сопротивление амперметра, R<sub>пр</sub> исследуемая проволока</figcaption>
+      </figure>
+      <p>В схеме <b>а</b> вольтметр правильно измеряет напряжение на проволоке, но амперметр показывает сумму токов через проволоку и через вольтметр:</p>
+      <div class="eq"><math display="block"><msub><mi>R</mi><mrow><mi>пр</mi><mn>1</mn></mrow></msub><mo>=</mo><mfrac><msub><mi>U</mi><mn>1</mn></msub><msub><mi>J</mi><mn>1</mn></msub></mfrac><mo>=</mo><mfrac><mrow><msub><mi>R</mi><mi>пр</mi></msub><msub><mi>R</mi><mi>V</mi></msub></mrow><mrow><msub><mi>R</mi><mi>пр</mi></msub><mo>+</mo><msub><mi>R</mi><mi>V</mi></msub></mrow></mfrac><mspace width="0.6em"/><mtext>(10.1)</mtext><mspace width="1.5em"/><msub><mi>R</mi><mi>пр</mi></msub><mo>≈</mo><msub><mi>R</mi><mrow><mi>пр</mi><mn>1</mn></mrow></msub><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mfrac><msub><mi>R</mi><mi>пр</mi></msub><msub><mi>R</mi><mi>V</mi></msub></mfrac><mo>)</mo></mrow><mspace width="0.6em"/><mtext>(10.3)</mtext></math></div>
+      <p>В схеме <b>б</b> амперметр правильно измеряет ток через проволоку, но вольтметр показывает сумму напряжений на проволоке и на амперметре:</p>
+      <div class="eq"><math display="block"><msub><mi>R</mi><mrow><mi>пр</mi><mn>2</mn></mrow></msub><mo>=</mo><mfrac><msub><mi>U</mi><mn>2</mn></msub><msub><mi>J</mi><mn>2</mn></msub></mfrac><mo>=</mo><msub><mi>R</mi><mi>пр</mi></msub><mo>+</mo><msub><mi>R</mi><mi>A</mi></msub><mspace width="0.6em"/><mtext>(10.2)</mtext><mspace width="1.5em"/><msub><mi>R</mi><mi>пр</mi></msub><mo>=</mo><msub><mi>R</mi><mrow><mi>пр</mi><mn>2</mn></mrow></msub><mrow><mo>(</mo><mn>1</mn><mo>−</mo><mfrac><msub><mi>R</mi><mi>A</mi></msub><msub><mi>R</mi><mrow><mi>пр</mi><mn>2</mn></mrow></msub></mfrac><mo>)</mo></mrow><mspace width="0.6em"/><mtext>(10.4)</mtext></math></div>
+      <p>Члены в скобках это поправки, которые нужно внести в измерения. При R<sub>пр</sub> ≈ 5 Ом, R<sub>V</sub> = 500 Ом и R<sub>A</sub> = 1 Ом поправка для схемы а около 1 %, для схемы б около 20 %, поэтому для небольших сопротивлений меньшую ошибку даёт схема а.</p>
+      <h3>Установка FPM-01</h3>
+      <p>Нихромовая проволока натянута между двумя неподвижными плоскими прижимными контактами на колонке. Вдоль неё перемещается подвижный кронштейн с контактом, им устанавливают длину измеряемого участка, которую отсчитывают по шкале на колонке. На лицевой панели измерительного блока: милливольтметр и миллиамперметр, клавиша «Сеть» W1 с индикатором Z1, клавиша W3 включения измерения сопротивления провода, клавиша W2 выбора схемы (нажата: схема 5, а, отжата: схема 5, б), потенциометр «Регулятор тока» P1 и клеммы Z11, Z12, Z13. Диаметр проволоки измеряют микрометром.</p>
+      <h3>Контрольные вопросы и задания</h3>
+      <ol class="qlist">
+        <li>Какие измерения называются прямыми? Косвенными?</li>
+        <li>Чем характеризуется точность измерений?</li>
+        <li>Что называется абсолютной погрешностью? Относительной погрешностью?</li>
+        <li>Какие погрешности называют промахами? Систематическими? Случайными?</li>
+        <li>Как учитывают систематические погрешности?</li>
+        <li>Как производят оценку случайных погрешностей прямых измерений? Что называется среднеквадратичной погрешностью?</li>
+        <li>Как находится суммарная погрешность?</li>
+        <li>Как производится оценка погрешностей при косвенных измерениях?</li>
+        <li>В каком виде записывают результаты измерений?</li>
+        <li>Чем определяется точность числовых значений результатов измерений?</li>
+        <li>Что называется десятичными знаками числа? Значащими цифрами числа?</li>
+        <li>Как округляются результаты, полученные при выполнении математических операций над числами?</li>
+        <li>На каком физическом принципе основана работа приборов магнитоэлектрической системы? Их устройство, обозначение на шкале.</li>
+        <li>На каком физическом принципе основана работа приборов электромагнитной системы? Их устройство, обозначение на шкале.</li>
+        <li>Что называется ценой деления прибора? Чувствительностью прибора?</li>
+        <li>Дайте определение класса точности электроизмерительного прибора. Каким символом обозначается класс точности на шкалах приборов?</li>
+        <li>Как определить абсолютную погрешность прибора, зная его класс точности?</li>
+        <li>Как определяется текущая относительная погрешность измерения электроизмерительного прибора?</li>
+        <li>Дайте пояснение обозначений на шкалах электроизмерительных приборов.</li>
+        <li>Как увеличить пределы измерения тока амперметром? Способ его включения в цепь.</li>
+        <li>Как увеличить пределы измерения напряжения вольтметром? Способ его включения в цепь.</li>
+        <li>Какую из приведённых на рисунке схем 5, а или 5, б выбрали для измерения сопротивления при помощи амперметра и вольтметра; почему? Чем обусловлена неточность при измерении сопротивления проволоки с помощью схемы 5, а и 5, б? При каком условии измерение сопротивления проволоки оказывается с меньшей погрешностью при помощи схемы 5, а, чем при помощи схемы 5, б?</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+try { const nj = document.getElementById('nojs'); if (nj) nj.remove(); } catch (e) {}
+
+/* ---------- утилиты ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const num = s => {
+  if (s == null) return NaN;
+  const t = String(s).trim().replace(/\s/g, '').replace(',', '.').replace('−', '-');
+  return t === '' ? NaN : Number(t);
+};
+const filled = v => String(v == null ? '' : v).trim() !== '';
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rnd = (a, b) => a + Math.random() * (b - a);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let toastTimer = 0;
+function toast(msg, ms = 3600) {
+  const el = $('#toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+const polar = (cx, cy, r, aDeg) => { const a = aDeg * Math.PI / 180; return [cx + r * Math.sin(a), cy - r * Math.cos(a)]; };
+function gauss() { let u = 0; while (!u) u = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random()); }
+const f1 = x => x.toFixed(1), f2 = x => x.toFixed(2);
+
+/* ---------- скрытые параметры конкретной установки ---------- */
+const KEY = 'fizlab11-rho-v1';
+const saved = store.get(KEY) || {};
+const hidden = saved.hidden || (() => {
+  const d0 = rnd(0.330, 0.358);
+  return {
+    rho: rnd(1.04e-6, 1.16e-6),                                   // удельное сопротивление, Ом м
+    dSec: Array.from({ length: 10 }, () => +(d0 + clamp(gauss() * 0.006, -0.012, 0.012)).toFixed(4)),   // диаметр на участках, мм
+    z0: rnd(-0.006, 0.008),                                       // сдвиг нуля микрометра, мм
+    l0: rnd(-0.25, 0.25),                                         // неточность нуля шкалы колонки, см
+    rc: rnd(0.01, 0.04),                                          // сопротивление контактов, Ом
+    RV: 500 * (1 + rnd(-0.03, 0.03)), RA: 1 * (1 + rnd(-0.05, 0.05)),
+    gV: rnd(-0.003, 0.003), gA: rnd(-0.003, 0.003),               // погрешности в пределах класса 0,5
+    zV: rnd(-0.15, 0.15), zA: rnd(-0.1, 0.1)                      // сдвиг нуля стрелок, дел
+  };
+})();
+const S_TRUE = Math.PI / 4 * hidden.dSec.reduce((a, d) => a + d * d, 0) / 10 * 1e-6;   // м²
+
+const CH = [['sys', 'Система'], ['cls', 'Класс точности'], ['lim', 'Предел измерений x<sub>П</sub>'], ['n', 'Число делений шкалы n'], ['cena', 'Цена деления x<sub>П</sub>/n'], ['sens', 'Чувствительность n/x<sub>П</sub>'], ['abs', 'Абсолютная погрешность Δx<sub>M</sub>'], ['rin', 'Внутреннее сопротивление прибора (на данном пределе измерений)']];
+const NROW = 12;
+function freshData() {
+  const ch = {}; for (const [k] of CH) ch[k] = ['', ''];
+  return {
+    d: Array(10).fill(''), dd: Array(10).fill(''),
+    dm: '', dRand: '', dSys: '', dTot: '', dRel: '', S: '', dS: '', dSrel: '',
+    ch, corrA: '', corrB: '', scheme: '',
+    blocks: [0, 1, 2].map(() => ({ l: '', rows: Array.from({ length: NROW }, () => ({ u: '', j: '', um: '', jm: '' })) })),
+    R: [0, 1, 2].map(() => ({ u: '', j: '', r: '', du: '', dj: '', del: '', dr: '', rpr: '' })),
+    rho: [0, 1, 2].map(() => ({ v: '', del: '', dv: '' })),
+    rhoRes: '', rhoErr: '', rhoDel: '',
+    journal: [], conc: ''
+  };
+}
+const data = Object.assign(freshData(), saved.data || {});
+// отметки работы со стендом живут только в этом заходе
+const flags = { plug: false, power: false, w3: false, w2: false, bracket: false, v23: false };
+function save() { store.set(KEY, { hidden, data }); }
+
+/* ---------- состояние установки ---------- */
+const st = {
+  plug: false, power: false, w3: false, w2: false, p1: rnd(0.15, 0.4), l: rnd(42, 47),
+  U: 0, I: 0, mV: { a: 0, v: 0 }, mA: { a: 0, v: 0 }, nzV: 0, nzA: 0
+};
+const mic = { g: 1.2, sec: 0, wire: false, dC: 0 };
+
+/* ---------- геометрия ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const Y0 = 676, PXCM = 10;                         // колонка: 0 см на y = 676, 10 px на см
+const CY = 566, AF = 382, S0 = 628, MMPX = 84, RT = 92, GMAX = 2;   // микрометр: ось, торец пятки, ноль стебля, px на мм, радиус барабана
+const MET = {
+  mV: { x: 268, y: 40, w: 284, n: 150, lab: 30, unit: 'mV' },
+  mA: { x: 566, y: 40, w: 284, n: 75, lab: 15, unit: 'mA' }
+};
+const MSPAN = 48, MR = 128;
+
+/* ---------- схемы рис. 5 ---------- */
+function schemeSVG(t, labels) {
+  let s = '<g stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round">';
+  s += '<path d="M10,12 H64 M76,12 H112 M152,12 H190 V38 M184,50 L190,38 M190,52 V76"/>';
+  s += '<line x1="64" y1="1" x2="64" y2="23" stroke-width="2"/><line x1="76" y1="6" x2="76" y2="18" stroke-width="3.2"/>';
+  s += '<rect x="112" y="6" width="40" height="12"/><path d="M116,24 L150,0 M150,0 l-7,1 M150,0 l-2,6"/>';
+  s += '<rect x="118" y="70" width="40" height="12"/>';
+  if (t === 'a') {
+    s += '<path d="M10,12 V24 M10,40 V48 M10,62 V76 H118 M158,76 H190"/>';
+    s += '<circle cx="10" cy="32" r="8"/><rect x="4" y="48" width="12" height="14"/>';
+    s += '<path d="M24,76 V96 H52 M68,96 H112 M148,96 H176 V76"/>';
+  } else {
+    s += '<path d="M10,12 V76 H34 M50,76 H62 M84,76 H118 M158,76 H190"/>';
+    s += '<circle cx="42" cy="76" r="8"/><rect x="62" y="70" width="22" height="12"/>';
+    s += '<path d="M22,76 V96 H52 M68,96 H112 M148,96 H176 V76"/>';
+  }
+  s += '<circle cx="60" cy="96" r="8"/><rect x="112" y="90" width="36" height="12"/></g>';
+  const dotX = t === 'a' ? 24 : 22;
+  s += `<circle cx="${dotX}" cy="76" r="2.4" fill="currentColor"/><circle cx="176" cy="76" r="2.4" fill="currentColor"/>`;
+  const ax = t === 'a' ? 10 : 42, ay = t === 'a' ? 32 : 76;
+  s += `<text x="${ax}" y="${ay + 4}" text-anchor="middle" font-family="Manrope" font-weight="700" font-size="10.5" fill="currentColor">A</text>`;
+  s += `<text x="60" y="100" text-anchor="middle" font-family="Manrope" font-weight="700" font-size="10.5" fill="currentColor">V</text>`;
+  if (labels) {
+    const T = (x, y, h) => `<text x="${x}" y="${y}" text-anchor="middle" font-family="Manrope" font-style="italic" font-size="12" fill="currentColor">${h}</text>`;
+    s += T(132, 34, 'R') + T(138, 64, 'R<tspan font-size="9" dy="3">пр</tspan>') + T(130, 118, 'R<tspan font-size="9" dy="3">V</tspan>');
+    s += t === 'a' ? T(30, 59, 'R<tspan font-size="9" dy="3">A</tspan>') : T(73, 64, 'R<tspan font-size="9" dy="3">A</tspan>');
+  }
+  return s;
+}
+
+/* ---------- построение установки ---------- */
+function meterSVG(id) {
+  const M = MET[id], x = M.x, y = M.y, w = M.w, px = x + w / 2, py = y + 180;
+  let s = `<g><rect x="${x}" y="${y}" width="${w}" height="240" rx="10" fill="url(#gBezel)"/>`;
+  s += `<rect x="${x + 10}" y="${y + 10}" width="${w - 20}" height="172" rx="4" fill="url(#gFace)"/>`;
+  let t = '';
+  for (let k = 0; k <= M.n; k++) {
+    const a = -MSPAN + 2 * MSPAN * k / M.n, big = k % M.lab === 0, mid = k % 5 === 0;
+    const len = big ? 15 : mid ? 9 : 5;
+    const [x0, y0] = polar(px, py, MR, a), [x1, y1] = polar(px, py, MR - len, a);
+    t += `<line x1="${f2(x0)}" y1="${f2(y0)}" x2="${f2(x1)}" y2="${f2(y1)}" stroke-width="${big ? 1.4 : mid ? 1 : .6}"/>`;
+  }
+  s += `<g stroke="#1A1A1A">${t}</g>`;
+  const [ax0, ay0] = polar(px, py, MR, -MSPAN), [ax1, ay1] = polar(px, py, MR, MSPAN);
+  s += `<path d="M${f2(ax0)},${f2(ay0)} A${MR} ${MR} 0 0 1 ${f2(ax1)},${f2(ay1)}" fill="none" stroke="#1A1A1A" stroke-width=".9"/>`;
+  const [bx0, by0] = polar(px, py, MR - 22, -MSPAN + 2), [bx1, by1] = polar(px, py, MR - 22, MSPAN - 2);
+  s += `<path d="M${f2(bx0)},${f2(by0)} A${MR - 22} ${MR - 22} 0 0 1 ${f2(bx1)},${f2(by1)}" fill="none" stroke="url(#gMirror)" stroke-width="5"/>`;
+  for (let k = 0; k <= M.n; k += M.lab) {
+    const [lx, ly] = polar(px, py, MR + 12, -MSPAN + 2 * MSPAN * k / M.n);
+    s += `<text x="${f2(lx)}" y="${f2(ly + 4)}" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">${k}</text>`;
+  }
+  s += `<text x="${px}" y="${py - 58}" text-anchor="middle" style="font:700 21px var(--font-ui);fill:#1A1A1A">${M.unit}</text>`;
+  // обозначения на шкале
+  const ix = x + 22, iy = y + 150;
+  if (id === 'mV') s += `<path d="M${ix},${iy + 10} v-7 a6,6 0 0 1 12,0 v7" fill="none" stroke="#1A1A1A" stroke-width="1.6"/>`;
+  else s += `<g fill="none" stroke="#1A1A1A" stroke-width="1.4"><path d="M${ix + 6},${iy - 4} v16"/><path d="M${ix},${iy} l6,3 l6,-3 M${ix},${iy + 5} l6,3 l6,-3"/></g>`;
+  s += `<line x1="${ix + 20}" y1="${iy + 4}" x2="${ix + 34}" y2="${iy + 4}" stroke="#1A1A1A" stroke-width="1.6"/>`;
+  s += `<line x1="${ix + 42}" y1="${iy + 9}" x2="${ix + 56}" y2="${iy + 9}" stroke="#1A1A1A" stroke-width="2.2"/>`;
+  s += `<text x="${ix}" y="${iy + 28}" style="font:600 11.5px var(--font-num);fill:#1A1A1A">0,5</text>`;
+  s += `<text x="${x + w - 22}" y="${iy + 8}" text-anchor="end" style="font:600 11.5px var(--font-num);fill:#1A1A1A">${id === 'mV' ? '0,3 V' : '0,15 A'}</text>`;
+  s += `<text x="${x + w - 22}" y="${iy + 28}" text-anchor="end" style="font:600 11.5px var(--font-num);fill:#1A1A1A">${id === 'mV' ? 'R = 500 Ω' : 'R = 1 Ω'}</text>`;
+  s += `<g id="n${id}" transform="rotate(${-MSPAN} ${px} ${py})"><line x1="${px}" y1="${py + 4}" x2="${px}" y2="${py - MR + 2}" stroke="#B42318" stroke-width="1.5"/></g>`;
+  s += `<path d="M${px - 15},${py + 2} A15 15 0 0 1 ${px + 15},${py + 2} Z" fill="#202428"/>`;
+  // лупа у конца стрелки
+  s += `<rect x="${x + 10}" y="${y + 192}" width="${w - 20}" height="40" rx="4" fill="url(#gFace)"/>`;
+  s += `<clipPath id="c${id}"><rect x="${x + 10}" y="${y + 192}" width="${w - 20}" height="40" rx="4"/></clipPath>`;
+  s += `<g id="L${id}" clip-path="url(#c${id})"></g>`;
+  s += `<line x1="${px}" y1="${y + 190}" x2="${px}" y2="${y + 234}" stroke="#B42318" stroke-width="1.6"/>`;
+  s += `<text x="${x + 16}" y="${y + 229}" style="font:600 10px var(--font-ui);fill:#7A7F86">лупа</text></g>`;
+  return s;
+}
+function keySVG(id, x, y, label) {
+  return `<g id="${id}" class="hit key" tabindex="0" role="switch" aria-label="Клавиша ${label}" aria-checked="false">
+    <rect x="${x}" y="${y}" width="48" height="50" rx="6" fill="#121417" stroke="#4A515A"/>
+    <g class="cap"><rect x="${x + 6}" y="${y + 6}" width="36" height="34" rx="4" fill="url(#gKey)" stroke="#0A0B0D"/><rect x="${x + 10}" y="${y + 9}" width="28" height="4" rx="2" fill="#fff" opacity=".18"/></g>
+    <text x="${x + 24}" y="${y + 66}" text-anchor="middle" class="eng">${label}</text></g>`;
+}
+function knobSVG(id, cx, cy, label, r = 30) {
+  let s = `<g id="${id}" class="knob" tabindex="0" role="slider" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" style="cursor:ns-resize">`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${r + 24}" fill="transparent"/>`;
+  for (let k = 0; k <= 20; k++) {
+    const a = -135 + 270 * k / 20;
+    const [x0, y0] = polar(cx, cy, r + 7, a), [x1, y1] = polar(cx, cy, r + (k % 2 ? 10 : 13), a);
+    s += `<line x1="${f2(x0)}" y1="${f2(y0)}" x2="${f2(x1)}" y2="${f2(y1)}" stroke="#C9CED6" stroke-width="${k % 2 ? .8 : 1.4}"/>`;
+    if (k % 4 === 0) { const [tx, ty] = polar(cx, cy, r + 21, a); s += `<text x="${f2(tx)}" y="${f2(ty + 4)}" text-anchor="middle" class="eng sm">${k / 2}</text>`; }
+  }
+  s += `<circle cx="${cx}" cy="${cy}" r="${r + 2}" fill="#15181C"/><g class="rot" transform="rotate(-135 ${cx} ${cy})">`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gKnob)" stroke="#07080A"/>`;
+  for (let k = 0; k < 30; k++) { const [x0, y0] = polar(cx, cy, r, k * 12), [x1, y1] = polar(cx, cy, r - 4, k * 12); s += `<line x1="${f2(x0)}" y1="${f2(y0)}" x2="${f2(x1)}" y2="${f2(y1)}" stroke="#454B53" stroke-width="1.3"/>`; }
+  s += `<circle cx="${cx}" cy="${cy}" r="${r - 9}" fill="url(#gKnobCap)"/><circle cx="${cx}" cy="${cy - r + 10}" r="3" fill="#F4F6F8"/></g></g>`;
+  return s;
+}
+
+function buildStand() {
+  let s = `<defs>
+    <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EDF0EE"/><stop offset="1" stop-color="#D2D9D4"/></linearGradient>
+    <linearGradient id="gPanel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A4049"/><stop offset="1" stop-color="#262A30"/></linearGradient>
+    <linearGradient id="gBezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#30353C"/><stop offset="1" stop-color="#16191D"/></linearGradient>
+    <linearGradient id="gFace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFBF6"/><stop offset="1" stop-color="#ECE8DB"/></linearGradient>
+    <linearGradient id="gMirror" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#B9C6CF"/><stop offset=".5" stop-color="#EEF3F6"/><stop offset="1" stop-color="#AAB8C2"/></linearGradient>
+    <linearGradient id="gKey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5A616A"/><stop offset="1" stop-color="#2A2F35"/></linearGradient>
+    <linearGradient id="gKeyOn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E3338"/><stop offset="1" stop-color="#1A1D21"/></linearGradient>
+    <radialGradient id="gKnob" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#5A6069"/><stop offset=".6" stop-color="#1E2227"/><stop offset="1" stop-color="#0C0E10"/></radialGradient>
+    <radialGradient id="gKnobCap" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#8E959E"/><stop offset="1" stop-color="#3A4048"/></radialGradient>
+    <linearGradient id="gSteel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F2F4F6"/><stop offset=".45" stop-color="#C3C9CF"/><stop offset="1" stop-color="#8D959D"/></linearGradient>
+    <linearGradient id="gSteelV" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8D959D"/><stop offset=".45" stop-color="#E6EAED"/><stop offset="1" stop-color="#8D959D"/></linearGradient>
+    <linearGradient id="gThim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9AA2AA"/><stop offset=".3" stop-color="#E9ECEF"/><stop offset=".55" stop-color="#D0D5DA"/><stop offset="1" stop-color="#7C858E"/></linearGradient>
+    <linearGradient id="gRuler" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FBFAF5"/><stop offset="1" stop-color="#E9E6DA"/></linearGradient>
+    <radialGradient id="gWireSec" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#E4E7EA"/><stop offset="1" stop-color="#6E767E"/></radialGradient>
+  </defs>
+  <style>
+    .eng{font:600 12px var(--font-ui);fill:#D5DAE1;letter-spacing:.04em}
+    .eng.sm{font-size:10.5px;letter-spacing:0;fill:#AEB5BF}
+    .lab{font:700 11.5px var(--font-ui);fill:#4E5852;letter-spacing:.06em}
+    .knob,.hit{touch-action:none}
+    .hit{cursor:pointer}
+  </style>`;
+
+  /* ---- колонка ---- */
+  s += `<rect x="20" y="14" width="216" height="692" rx="14" fill="url(#gBody)" stroke="#AEB8B1"/>`;
+  s += `<text x="34" y="38" class="lab">КОЛОНКА</text>`;
+  s += `<rect x="34" y="146" width="112" height="14" rx="3" fill="#3C4652"/>`;
+  s += `<rect x="96" y="160" width="8" height="522" fill="url(#gSteelV)"/>`;
+  s += `<rect x="30" y="682" width="196" height="16" rx="4" fill="#3C4652"/>`;
+  s += `<line x1="70" y1="158" x2="70" y2="684" stroke="#7B8289" stroke-width="2"/><line x1="69.4" y1="158" x2="69.4" y2="684" stroke="#E2E5E8" stroke-width=".6"/>`;
+  s += `<rect x="58" y="154" width="24" height="12" rx="2" fill="#B8862E" stroke="#6B4A12"/>`;
+  s += `<rect x="58" y="${Y0}" width="24" height="10" rx="2" fill="#B8862E" stroke="#6B4A12"/>`;
+  s += `<text x="40" y="140" style="font:600 10.5px var(--font-ui);fill:#4E5852">нихром</text>`;
+  // шкала колонки
+  s += `<rect x="150" y="166" width="28" height="520" fill="url(#gRuler)" stroke="#B7B2A2"/>`;
+  let rt = '';
+  for (let k = 0; k <= 100; k++) {
+    const yy = Y0 - k * PXCM / 2, cm = k / 2, big = k % 10 === 0, whole = k % 2 === 0;
+    rt += `<line x1="150" y1="${yy}" x2="${150 + (big ? 14 : whole ? 8 : 4)}" y2="${yy}"/>`;
+    if (big) s += `<text x="183" y="${yy + 4}" style="font:600 11px var(--font-num);fill:#1E2420">${cm}</text>`;
+  }
+  s += `<g stroke="#1E2420" stroke-width=".9">${rt}</g>`;
+  s += `<text x="183" y="160" style="font:600 10.5px var(--font-ui);fill:#4E5852">см</text>`;
+  // кронштейн
+  s += `<g id="brk" class="hit drag" tabindex="0" role="slider" aria-label="Подвижный кронштейн" style="cursor:ns-resize">
+    <rect x="44" y="-18" width="140" height="36" fill="transparent"/>
+    <rect x="58" y="-7" width="24" height="14" rx="2" fill="#B8862E" stroke="#6B4A12"/>
+    <rect x="82" y="-4" width="66" height="8" fill="#3C4652"/>
+    <rect x="91" y="-13" width="18" height="26" rx="3" fill="#2D353F"/>
+    <rect x="112" y="-10" width="22" height="20" rx="4" fill="#2D353F"/>
+    <path d="M115,-4 h16 M115,0 h16 M115,4 h16" stroke="#59636E" stroke-width="1.2"/>
+    <path d="M150,0 L142,-6 L142,6 Z" fill="#B42318"/>
+    <line x1="150" y1="0" x2="178" y2="0" stroke="#B42318" stroke-width="1"/></g>`;
+  s += `<clipPath id="cLoupe"><rect id="cLoupeR" x="182" y="0" width="48" height="92" rx="8"/></clipPath>`;
+  s += `<g id="loupe"></g>`;
+
+  /* ---- измерительный блок FPM-01 ---- */
+  s += `<rect x="250" y="14" width="730" height="378" rx="14" fill="url(#gPanel)" stroke="#121417"/>`;
+  s += `<text x="268" y="31" class="eng sm" style="letter-spacing:.08em">ИЗМЕРИТЕЛЬНЫЙ БЛОК FPM-01</text>`;
+  s += meterSVG('mV') + meterSVG('mA');
+  s += `<rect x="884" y="48" width="64" height="26" rx="3" fill="#120B07" stroke="#4A515A"/><rect id="z1" x="888" y="52" width="56" height="18" rx="2" fill="#3A1D0E"/>`;
+  s += `<text x="916" y="92" text-anchor="middle" class="eng sm">Z1</text>`;
+  s += knobSVG('kP1', 916, 176, 'Регулятор тока P1');
+  s += `<text x="916" y="248" text-anchor="middle" class="eng">P1</text><text x="916" y="264" text-anchor="middle" class="eng sm">регулятор тока</text>`;
+  for (const [i, xx] of [[1, 292], [2, 330], [3, 368]]) s += `<circle cx="${xx}" cy="326" r="13" fill="#B31B1B" stroke="#4A0A0A"/><circle cx="${xx}" cy="326" r="5" fill="#2A0606"/><text x="${xx}" y="366" text-anchor="middle" class="eng sm">Z1${i}</text>`;
+  s += keySVG('kW3', 410, 302, 'W3');
+  s += `<rect x="474" y="296" width="242" height="86" rx="8" fill="none" stroke="#4A515A" stroke-dasharray="3 4"/>`;
+  s += `<g id="schemeBox" transform="translate(486,305) scale(.68)" style="color:#7D858F"></g>`;
+  s += `<text id="schemeLbl" x="694" y="336" text-anchor="middle" style="font:700 12px var(--font-ui);fill:#AEB5BF">рис. 5</text><text id="schemeLtr" x="694" y="360" text-anchor="middle" style="font:800 20px var(--font-ui);fill:#AEB5BF">б</text>`;
+  s += keySVG('kW2', 730, 302, 'W2');
+  s += `<rect x="796" y="314" width="72" height="26" rx="4" fill="#30343A"/><text x="832" y="331" text-anchor="middle" style="font:700 11px var(--font-ui);fill:#C9CED6;letter-spacing:.1em">FPM-01</text>`;
+  s += keySVG('kW1', 892, 302, 'W1 СЕТЬ');
+
+  /* ---- микрометр ---- */
+  s += `<rect x="250" y="404" width="730" height="302" rx="14" fill="url(#gBody)" stroke="#AEB8B1"/>`;
+  s += `<text x="266" y="428" class="lab">МИКРОМЕТР МК-25, ЦЕНА ДЕЛЕНИЯ 0,01 мм</text>`;
+  s += `<path d="M352,592 C352,700 583,700 583,600" fill="none" stroke="#3C4652" stroke-width="34"/>`;
+  s += `<text x="468" y="679" text-anchor="middle" style="font:600 11px var(--font-ui);fill:#E5E9EE">0–25 мм   0,01 мм</text>`;
+  s += `<rect x="326" y="542" width="50" height="52" rx="6" fill="#3C4652"/><rect x="366" y="${CY - 12}" width="${AF - 366}" height="24" fill="url(#gSteel)"/>`;
+  s += `<rect id="spindle" x="${AF}" y="${CY - 10}" width="200" height="20" fill="url(#gSteel)"/>`;
+  s += `<rect x="552" y="534" width="62" height="64" rx="8" fill="#3C4652"/>`;
+  s += `<g id="wireSec"></g>`;
+  s += `<clipPath id="cSleeve"><rect id="cSleeveR" x="610" y="500" width="200" height="140"/></clipPath>`;
+  let sl = `<rect x="612" y="${CY - 32}" width="320" height="64" fill="url(#gSteel)"/><line x1="616" y1="${CY}" x2="930" y2="${CY}" stroke="#1A1D21" stroke-width="1.3"/>`;
+  for (let k = 0; k <= 3; k++) {
+    const xx = S0 + k * MMPX;
+    sl += `<line x1="${xx}" y1="${CY}" x2="${xx}" y2="${CY - 17}" stroke="#1A1D21" stroke-width="1.4"/><text x="${xx}" y="${CY - 21}" text-anchor="middle" style="font:600 13px var(--font-num);fill:#1A1D21">${k}</text>`;
+    sl += `<line x1="${xx + MMPX / 2}" y1="${CY}" x2="${xx + MMPX / 2}" y2="${CY + 14}" stroke="#1A1D21" stroke-width="1.2"/>`;
+  }
+  sl += `<line x1="${S0}" y1="${CY}" x2="${S0}" y2="${CY + 14}" stroke="#1A1D21" stroke-width="1.2"/>`;
+  s += `<g clip-path="url(#cSleeve)">${sl}</g>`;
+  s += `<g id="thimble" class="hit drag" tabindex="0" role="slider" aria-label="Барабан микрометра" style="cursor:ns-resize"></g>`;
+  s += `<text x="266" y="700" style="font:500 11px var(--font-ui);fill:#5B655F">отсчёт = деления стебля (мм и 0,5 мм) + деления барабана × 0,01 мм</text>`;
+  $('#stand').innerHTML = s;
+  $('#figA').innerHTML = schemeSVG('a', true);
+  $('#figB').innerHTML = schemeSVG('b', true);
+}
+buildStand();
+
+/* ---------- звук ---------- */
+let audio = null;
+function click(freq = 1300, dur = .03, vol = .05) {
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') audio.resume();
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(vol, audio.currentTime + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + dur);
+    o.connect(g).connect(audio.destination); o.start(); o.stop(audio.currentTime + dur + .01);
+  } catch (e) {}
+}
+
+/* ---------- колонка: кронштейн и лупа ---------- */
+let lastLoupe = -1;
+function renderColumn() {
+  const y = Y0 - st.l * PXCM;
+  $('#brk').setAttribute('transform', `translate(0,${f2(y)})`);
+  $('#brk').setAttribute('aria-valuenow', st.l.toFixed(1));
+  if (Math.abs(lastLoupe - st.l) < 0.002) return;
+  lastLoupe = st.l;
+  $('#cLoupeR').setAttribute('y', f2(y - 46));
+  const K = 50;   // px на см в лупе
+  let s = `<g clip-path="url(#cLoupe)"><rect x="182" y="${y - 46}" width="48" height="92" fill="url(#gRuler)"/>`;
+  for (let mm = Math.floor((st.l - 1) * 10); mm <= Math.ceil((st.l + 1) * 10); mm++) {
+    if (mm < 0 || mm > 500) continue;
+    const yy = y - (mm / 10 - st.l) * K, big = mm % 10 === 0, half = mm % 5 === 0;
+    s += `<line x1="182" y1="${f2(yy)}" x2="${182 + (big ? 17 : half ? 11 : 6)}" y2="${f2(yy)}" stroke="#1E2420" stroke-width="${big ? 1.3 : .9}"/>`;
+    if (big) s += `<text x="204" y="${f2(yy + 4)}" style="font:600 12px var(--font-num);fill:#1E2420">${mm / 10}</text>`;
+  }
+  s += `<line x1="182" y1="${f2(y)}" x2="230" y2="${f2(y)}" stroke="#B42318" stroke-width="1.4"/></g>`;
+  s += `<rect x="182" y="${y - 46}" width="48" height="92" rx="8" fill="none" stroke="#2D353F" stroke-width="2.5"/>`;
+  $('#loupe').innerHTML = s;
+}
+(() => {
+  const node = $('#brk'); let drag = null;
+  const svg = $('#stand');
+  const scale = () => 720 / svg.getBoundingClientRect().height;
+  node.addEventListener('pointerdown', e => { e.preventDefault(); node.focus({ preventScroll: true }); try { node.setPointerCapture(e.pointerId); } catch (err) {} drag = { y: e.clientY, l: st.l, k: scale() }; });
+  node.addEventListener('pointermove', e => { if (!drag) return; setL(drag.l - (e.clientY - drag.y) * drag.k / PXCM * (e.shiftKey ? .2 : 1)); });
+  const end = () => { drag = null; };
+  node.addEventListener('pointerup', end); node.addEventListener('pointercancel', end); node.addEventListener('lostpointercapture', end);
+  node.addEventListener('wheel', e => { e.preventDefault(); setL(st.l - Math.sign(e.deltaY) * (e.shiftKey ? 0.02 : 0.2)); }, { passive: false });
+  node.addEventListener('keydown', e => {
+    const d = { ArrowUp: .1, ArrowDown: -.1, PageUp: 1, PageDown: -1 };
+    if (e.key in d) { e.preventDefault(); setL(st.l + d[e.key] * (e.shiftKey ? .2 : 1)); }
+  });
+})();
+function setL(v) {
+  st.l = clamp(v, 5, 49.5); renderColumn();
+  if (st.l >= 30 && st.l <= 40 && !flags.bracket) { flags.bracket = true; renderSteps(); }
+}
+
+/* ---------- микрометр ---------- */
+let ratchetT = 0, ratchetTold = false;
+function renderMicro() {
+  const Rd = mic.g + hidden.z0, E = S0 + Rd * MMPX;
+  const fx = AF + mic.g * MMPX;
+  $('#spindle').setAttribute('x', f2(fx)); $('#spindle').setAttribute('width', f2(Math.max(1, 566 - fx)));
+  $('#cSleeveR').setAttribute('width', f2(Math.max(0, E - 610)));
+  $('#wireSec').innerHTML = mic.wire ? `<circle cx="${f2(AF + mic.dC * MMPX / 2)}" cy="${CY}" r="${f2(mic.dC * MMPX / 2)}" fill="url(#gWireSec)" stroke="#4C5359" stroke-width=".8"/><text x="${AF + 8}" y="${CY - 46}" text-anchor="middle" style="font:600 10.5px var(--font-ui);fill:#4E5852">участок ${mic.sec + 1}</text>` : '';
+  const frac = ((Rd * 100) % 50 + 50) % 50;
+  let t = `<rect x="${f2(E)}" y="${CY - RT}" width="112" height="${2 * RT}" rx="6" fill="url(#gThim)" stroke="#5B636B"/>`;
+  t += `<rect x="${f2(E)}" y="${CY - RT}" width="24" height="${2 * RT}" rx="4" fill="#fff" opacity=".22"/>`;
+  for (let k = 0; k < 36; k++) {
+    const th = ((k * 10 + frac * 7.2) % 360 - 180) * Math.PI / 180;
+    if (Math.abs(th) > 1.4) continue;
+    const yy = CY + RT * Math.sin(th);
+    t += `<line x1="${f2(E + 56)}" y1="${f2(yy)}" x2="${f2(E + 110)}" y2="${f2(yy)}" stroke="#5B636B" stroke-width="1" opacity="${f2(Math.cos(th) * .7)}"/>`;
+  }
+  for (let v = Math.floor(frac) - 11; v <= Math.ceil(frac) + 11; v++) {
+    const th = (v - frac) * 2 * Math.PI / 50;
+    if (Math.abs(th) > 1.32) continue;
+    const yy = CY + RT * Math.sin(th), c = Math.cos(th), vm = ((v % 50) + 50) % 50, long = vm % 5 === 0;
+    t += `<line x1="${f2(E)}" y1="${f2(yy)}" x2="${f2(E + (long ? 18 : 10))}" y2="${f2(yy)}" stroke="#15181C" stroke-width="${long ? 1.3 : .9}" opacity="${f2(c)}"/>`;
+    if (long) t += `<text x="${f2(E + 23)}" y="${f2(yy + 4.5 * c)}" style="font:600 ${f1(13 * (0.55 + 0.45 * c))}px var(--font-num);fill:#15181C" opacity="${f2(c)}">${vm}</text>`;
+  }
+  t += `<rect x="${f2(E + 112)}" y="${CY - 24}" width="44" height="48" rx="5" fill="url(#gThim)" stroke="#5B636B"/>`;
+  for (let k = 1; k < 9; k++) t += `<line x1="${f2(E + 112 + k * 5)}" y1="${CY - 22}" x2="${f2(E + 112 + k * 5)}" y2="${CY + 22}" stroke="#6E767E" stroke-width=".8"/>`;
+  t += `<text x="${f2(E + 116)}" y="${CY + 40}" style="font:600 10.5px var(--font-ui);fill:#4E5852">трещотка</text>`;
+  $('#thimble').innerHTML = t;
+  $('#thimble').setAttribute('aria-valuenow', Rd.toFixed(3));
+}
+function setMicG(target) {
+  const lo = mic.wire ? mic.dC : 0;
+  if (target < lo) {
+    if (mic.g - lo < 1e-6 && target < lo - 0.0004) {
+      const now = performance.now();
+      if (now - ratchetT > 70) { ratchetT = now; click(2600, .012, .04); }
+      if (!ratchetTold) { ratchetTold = true; toast('Трещотка щёлкает: микрометр зажат с нормальным усилием, можно снимать отсчёт', 3000); }
+    }
+    mic.g = lo;
+  } else mic.g = Math.min(GMAX, target);
+  renderMicro();
+}
+(() => {
+  const node = $('#thimble'); let drag = null;
+  node.addEventListener('pointerdown', e => { e.preventDefault(); node.focus({ preventScroll: true }); try { node.setPointerCapture(e.pointerId); } catch (err) {} drag = { y: e.clientY, g: mic.g }; });
+  node.addEventListener('pointermove', e => { if (!drag) return; const k = e.shiftKey ? 0.0006 : 0.004; const tg = drag.g + (drag.y - e.clientY) * k; setMicG(tg); if (tg < mic.g) drag = { y: e.clientY, g: mic.g }; });
+  const end = () => { drag = null; };
+  node.addEventListener('pointerup', end); node.addEventListener('pointercancel', end); node.addEventListener('lostpointercapture', end);
+  node.addEventListener('wheel', e => { e.preventDefault(); setMicG(mic.g - Math.sign(e.deltaY) * (e.shiftKey ? 0.002 : 0.01)); }, { passive: false });
+  node.addEventListener('keydown', e => {
+    const d = { ArrowUp: .005, ArrowRight: .005, ArrowDown: -.005, ArrowLeft: -.005, PageUp: .1, PageDown: -.1 };
+    if (e.key in d) { e.preventDefault(); setMicG(mic.g + d[e.key] * (e.shiftKey ? .2 : 1)); }
+  });
+})();
+$('#secSel').innerHTML = Array.from({ length: 10 }, (_, i) => `<option value="${i}">${i + 1}</option>`).join('');
+$('#secSel').addEventListener('change', e => { mic.sec = +e.target.value; $('#secLbl').textContent = mic.sec + 1; });
+$('#wireBtn').addEventListener('click', () => {
+  if (!mic.wire) {
+    const d = hidden.dSec[mic.sec];
+    if (mic.g < d + 0.03) { toast('Проволока не входит. Разведите микрометр, повернув барабан на себя (вверх)'); return; }
+    mic.wire = true; mic.dC = d + clamp(gauss() * 0.0012, -0.003, 0.003);
+  } else {
+    if (mic.g - mic.dC < 0.01) { toast('Проволока зажата. Сначала разведите микрометр, повернув барабан вверх'); return; }
+    mic.wire = false;
+  }
+  click(700, .04);
+  $('#wireBtn').textContent = mic.wire ? 'Вынуть из микрометра' : 'Вставить в микрометр';
+  $('#secSel').disabled = mic.wire;
+  renderMicro();
+});
+$('#recDBtn').addEventListener('click', () => {
+  const v = $('#recD').value.trim();
+  if (!isFinite(num(v)) || num(v) <= 0) { toast('Впишите отсчёт микрометра в миллиметрах, например 0,34'); return; }
+  data.d[mic.sec] = v; save(); renderSteps();
+  $('#recD').value = '';
+  toast(`Участок ${mic.sec + 1}: d = ${v} мм записано в таблицу 1`, 2200);
+  if (mic.sec < 9 && !mic.wire) { mic.sec++; $('#secSel').value = String(mic.sec); $('#secLbl').textContent = mic.sec + 1; }
+});
+
+/* ---------- панель FPM-01 ---------- */
+const on = () => st.plug && st.power;
+function renderPanel() {
+  for (const [id, v] of [['kW1', st.power], ['kW2', st.w2], ['kW3', st.w3]]) {
+    const n = $('#' + id);
+    n.querySelector('.cap').setAttribute('transform', v ? 'translate(0,5)' : '');
+    n.querySelector('.cap rect').setAttribute('fill', v ? 'url(#gKeyOn)' : 'url(#gKey)');
+    n.setAttribute('aria-checked', String(v));
+  }
+  $('#z1').setAttribute('fill', on() ? '#FF8A3D' : '#3A1D0E');
+  const live = on() && st.w3;
+  $('#schemeBox').innerHTML = schemeSVG(st.w2 ? 'a' : 'b', false);
+  $('#schemeBox').style.color = live ? '#7EE0A1' : '#7D858F';
+  const c = live ? '#7EE0A1' : '#AEB5BF';
+  $('#schemeLtr').textContent = st.w2 ? 'а' : 'б';
+  $('#schemeLtr').style.fill = c; $('#schemeLbl').style.fill = c;
+  $('#kP1 .rot').setAttribute('transform', `rotate(${(-135 + 270 * st.p1).toFixed(2)} 916 176)`);
+  $('#kP1').setAttribute('aria-valuenow', String(Math.round(st.p1 * 100)));
+  $('#plugBtn').setAttribute('aria-pressed', String(st.plug));
+  $('#plugBtn').textContent = st.plug ? 'Вилка в розетке' : 'Вилка в розетку 220 В';
+}
+function bindPress(node, fn) {
+  node.addEventListener('click', fn);
+  node.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(e); } });
+}
+bindPress($('#kW1'), () => {
+  st.power = !st.power; click(st.power ? 1200 : 900, .04);
+  if (st.power && st.plug && !flags.power) { flags.power = true; renderSteps(); }
+  if (st.power && !st.plug) toast('Индикатор Z1 не светится: вилка не в розетке (п. 4 а)');
+  renderPanel();
+});
+bindPress($('#kW3'), () => {
+  st.w3 = !st.w3; click(st.w3 ? 1150 : 850, .04);
+  if (st.w3 && on() && !flags.w3) { flags.w3 = true; renderSteps(); }
+  renderPanel();
+});
+bindPress($('#kW2'), () => {
+  st.w2 = !st.w2; click(st.w2 ? 1150 : 850, .04);
+  if (st.w2 && !flags.w2) { flags.w2 = true; renderSteps(); }
+  renderPanel();
+});
+$('#plugBtn').addEventListener('click', () => { st.plug = !st.plug; if (st.plug && !flags.plug) { flags.plug = true; renderSteps(); } renderPanel(); });
+(() => {
+  const node = $('#kP1'); let drag = null;
+  const set = v => { st.p1 = clamp(v, 0, 1); renderPanel(); };
+  node.addEventListener('pointerdown', e => { e.preventDefault(); node.focus({ preventScroll: true }); try { node.setPointerCapture(e.pointerId); } catch (err) {} drag = { y: e.clientY, v: st.p1 }; });
+  node.addEventListener('pointermove', e => { if (!drag) return; set(drag.v + (drag.y - e.clientY) * (e.shiftKey ? 1 / 1500 : 1 / 260)); });
+  const end = () => { drag = null; };
+  node.addEventListener('pointerup', end); node.addEventListener('pointercancel', end); node.addEventListener('lostpointercapture', end);
+  node.addEventListener('wheel', e => { e.preventDefault(); set(st.p1 - Math.sign(e.deltaY) * (e.shiftKey ? 0.001 : 0.006)); }, { passive: false });
+  node.addEventListener('keydown', e => {
+    const d = { ArrowUp: .004, ArrowRight: .004, ArrowDown: -.004, ArrowLeft: -.004, PageUp: .04, PageDown: -.04 };
+    if (e.key in d) { e.preventDefault(); set(st.p1 + d[e.key] * (e.shiftKey ? .25 : 1)); }
+  });
+})();
+
+/* ---------- физика цепи ---------- */
+const E_SRC = 1.2;
+function Rwire() { return hidden.rho * ((st.l + hidden.l0) / 100) / S_TRUE + hidden.rc; }
+function circuit() {
+  if (!on() || !st.w3) { st.U = 0; st.I = 0; return; }
+  const R = Rwire(), Rreg = 150 * Math.pow(4 / 150, st.p1), RV = hidden.RV, RA = hidden.RA;
+  if (st.w2) {            // схема 5, а: вольтметр прямо на проволоке, амперметр до развилки
+    const Rp = R * RV / (R + RV), It = E_SRC / (Rreg + RA + Rp);
+    st.I = It; st.U = It * Rp;
+  } else {                // схема 5, б: вольтметр на проволоке вместе с амперметром
+    const Rs = R + RA, Rp = Rs * RV / (Rs + RV), It = E_SRC / (Rreg + Rp);
+    st.U = It * Rp; st.I = st.U / Rs;
+  }
+}
+let pegV = false, pegA = false;
+function meterStep(dt) {
+  st.nzV = st.nzV * 0.985 + 0.015 * gauss() * 0.35;
+  st.nzA = st.nzA * 0.985 + 0.015 * gauss() * 0.3;
+  const live = on() && st.w3;
+  const tV = st.U * 1000 / 2 * (1 + hidden.gV) + hidden.zV + (live ? st.nzV * 0.1 : 0);
+  const tA = st.I * 1000 / 2 * (1 + hidden.gA) + hidden.zA + (live ? st.nzA * 0.1 : 0);
+  for (const [m, tg, lim] of [[st.mV, tV, 153], [st.mA, tA, 76.5]]) {
+    const wn = 2 * Math.PI * 1.2, z = .72;
+    const acc = wn * wn * (clamp(tg, -2, lim + 3) - m.a) - 2 * z * wn * m.v;
+    m.v += acc * dt; m.a += m.v * dt;
+    if (m.a > lim) { m.a = lim; m.v = -m.v * .2; }
+    if (m.a < -2) { m.a = -2; m.v = -m.v * .2; }
+  }
+}
+const lastL = { mV: 1e9, mA: 1e9 };
+function renderMeters() {
+  for (const id of ['mV', 'mA']) {
+    const M = MET[id], v = st[id].a, px = M.x + M.w / 2, py = M.y + 180;
+    $('#n' + id).setAttribute('transform', `rotate(${(-MSPAN + 2 * MSPAN * v / M.n).toFixed(3)} ${px} ${py})`);
+    if (Math.abs(v - lastL[id]) < 0.004) continue;
+    lastL[id] = v;
+    const K = 26, y = M.y + 192;
+    let s = '';
+    for (let k = Math.floor(v) - 6; k <= Math.ceil(v) + 6; k++) {
+      if (k < 0 || k > M.n) continue;
+      const xx = px + (k - v) * K, big = k % 5 === 0;
+      s += `<line x1="${f2(xx)}" y1="${y}" x2="${f2(xx)}" y2="${y + (big ? 17 : 10)}" stroke="#1A1A1A" stroke-width="${big ? 1.4 : 1}"/>`;
+      if (big) s += `<text x="${f2(xx)}" y="${y + 32}" text-anchor="middle" style="font:600 12px var(--font-num);fill:#1A1A1A">${k}</text>`;
+    }
+    $('#L' + id).innerHTML = s;
+  }
+  if (st.mV.a > 151 && !pegV) { pegV = true; toast('Стрелка милливольтметра зашкаливает. Уменьшите ток регулятором P1'); }
+  if (st.mV.a < 140) pegV = false;
+  if (st.mA.a > 75.5 && !pegA) { pegA = true; toast('Стрелка миллиамперметра зашкаливает. Уменьшите ток регулятором P1'); }
+  if (st.mA.a < 70) pegA = false;
+  if (on() && st.w3 && st.mV.a >= 95 && st.mV.a <= 105 && Math.abs(st.mV.v) < 2 && !flags.v23) { flags.v23 = true; renderSteps(); }
+}
+
+/* ---------- журнал ---------- */
+function renderJournal() {
+  $('#jrBody').innerHTML = data.journal.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.l)}</td><td>${esc(r.u)}</td><td>${esc(r.j)}</td><td><button class="x" data-del="${i}" aria-label="Удалить отсчёт">×</button></td></tr>`).join('');
+  $('#jrEmpty').hidden = data.journal.length > 0;
+}
+$('#jrBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  data.journal.splice(+b.dataset.del, 1); save(); renderJournal(); renderSteps();
+});
+$('#recBtn').addEventListener('click', () => {
+  const l = $('#recL').value.trim(), u = $('#recU').value.trim(), j = $('#recJ').value.trim();
+  if (!(num(l) > 0)) { toast('Впишите длину l по шкале на колонке, в сантиметрах'); return; }
+  if (!isFinite(num(u)) || !isFinite(num(j))) { toast('Впишите показания вольтметра и амперметра в делениях'); return; }
+  data.journal.push({ l, u, j });
+  $('#recU').value = ''; $('#recJ').value = '';
+  save(); renderJournal(); renderSteps();
+  const w = $('.jr-wrap'); w.scrollTop = w.scrollHeight;
+});
+
+/* ---------- таблицы и расчёт ---------- */
+const inp = (path, val, aria, cls = '') => `<input data-p="${path}" value="${esc(val)}" inputmode="${cls === 't' ? 'text' : 'decimal'}" aria-label="${aria}" class="${cls}">`;
+const fl = (cap, mathml, path, aria, unit = '') => `<div class="fline"><span class="cap">${cap}</span>${mathml}${inp(path, getPath(path), aria)}${unit ? `<span class="u">${unit}</span>` : ''}</div>`;
+const mi = s => `<math><mrow>${s}</mrow></math>`;
+function getPath(p) { return p.split('.').reduce((o, k) => o == null ? o : o[k], data); }
+function setPath(p, v) { const k = p.split('.'), last = k.pop(); k.reduce((o, kk) => o[kk], data)[last] = v; }
+
+function renderCalc() {
+  // 1. диаметр
+  let h = '<tr><th>№</th>' + Array.from({ length: 10 }, (_, i) => `<th>${i + 1}</th>`).join('') + '<th>Среднее</th></tr>';
+  h += '<tr><th class="l">d, мм</th>' + data.d.map((v, i) => `<td>${inp(`d.${i}`, v, `d${i + 1}`)}</td>`).join('') + `<td rowspan="2">${inp('dm', data.dm, 'd среднее')}</td></tr>`;
+  h += '<tr><th class="l">Δd<sub>i</sub>, мм</th>' + data.dd.map((v, i) => `<td>${inp(`dd.${i}`, v, `Δd${i + 1}`)}</td>`).join('') + '</tr>';
+  $('#dBody').innerHTML = h;
+  $('#dCalc').innerHTML =
+    fl('Случайная погрешность (3.2)', mi('<mi>Δ</mi><msub><mi>d</mi><mi>случ</mi></msub><mo>=</mo>'), 'dRand', 'Δd случ', 'мм') +
+    fl('Систематическая погрешность микрометра', mi('<mi>Δ</mi><msub><mi>d</mi><mi>сист</mi></msub><mo>=</mo>'), 'dSys', 'Δd сист', 'мм') +
+    fl('Полная погрешность (4.1)', mi('<mi>Δ</mi><mi>d</mi><mo>=</mo>'), 'dTot', 'Δd', 'мм') +
+    fl('Относительная погрешность', mi('<msub><mi>δ</mi><mi>d</mi></msub><mo>=</mo>'), 'dRel', 'δd', '%') +
+    fl('Площадь сечения', mi('<mi>S</mi><mo>=</mo><mfrac><mrow><mi>π</mi><msup><mover><mi>d</mi><mo>‾</mo></mover><mn>2</mn></msup></mrow><mn>4</mn></mfrac><mo>=</mo>'), 'S', 'S', 'мм²') +
+    fl('Погрешность площади', mi('<mi>Δ</mi><mi>S</mi><mo>=</mo><mn>2</mn><mfrac><mrow><mi>Δ</mi><mi>d</mi></mrow><mover><mi>d</mi><mo>‾</mo></mover></mfrac><mi>S</mi><mo>=</mo>'), 'dS', 'ΔS', 'мм²') +
+    fl('Относительная погрешность площади', mi('<msub><mi>δ</mi><mi>S</mi></msub><mo>=</mo>'), 'dSrel', 'δS', '%');
+  // 2. приборы
+  $('#chBody').innerHTML = CH.map(([k, name]) => `<tr><th class="l">${name}</th><td>${inp(`ch.${k}.0`, data.ch[k][0], `${k} вольтметр`, k === 'sys' ? 't' : '')}</td><td>${inp(`ch.${k}.1`, data.ch[k][1], `${k} амперметр`, k === 'sys' ? 't' : '')}</td></tr>`).join('');
+  // 3. поправки
+  $('#corrBox').innerHTML =
+    fl('Схема рис. 5, а, по формуле (10.3), R<sub>пр</sub> ≈ 5 Ом', mi('<mfrac><msub><mi>R</mi><mi>пр</mi></msub><msub><mi>R</mi><mi>V</mi></msub></mfrac><mo>=</mo>'), 'corrA', 'поправка а', '%') +
+    fl('Схема рис. 5, б, по формуле (10.4)', mi('<mfrac><msub><mi>R</mi><mi>A</mi></msub><msub><mi>R</mi><mrow><mi>пр</mi><mn>2</mn></mrow></msub></mfrac><mo>=</mo>'), 'corrB', 'поправка б', '%') +
+    `<div class="fline"><span class="cap">Для работы выбрана схема</span><select data-p="scheme" aria-label="Выбранная схема"><option value="">не выбрана</option><option value="a"${data.scheme === 'a' ? ' selected' : ''}>рис. 5, а (клавиша W2 нажата)</option><option value="b"${data.scheme === 'b' ? ' selected' : ''}>рис. 5, б (клавиша W2 отжата)</option></select></div>`;
+  // 4. блоки
+  $('#blkBox').innerHTML = data.blocks.map((b, i) => `<div>
+    <div class="blk-h">l<sub>${i + 1}</sub> = ${inp(`blocks.${i}.l`, b.l, `l${i + 1}`)} ± 0,1 см</div>
+    <div class="tblwrap"><table class="lab"><thead><tr><th>U,<br>дел</th><th>J,<br>дел</th><th>U,<br>мВ</th><th>J,<br>мА</th></tr></thead><tbody>
+    ${b.rows.map((r, k) => `<tr>${['u', 'j', 'um', 'jm'].map(f => `<td>${inp(`blocks.${i}.rows.${k}.${f}`, r[f], `l${i + 1} строка ${k + 1} ${f}`)}</td>`).join('')}</tr>`).join('')}
+    </tbody></table></div></div>`).join('');
+  // 5. сопротивление
+  const RROWS = [['u', 'U по графику, мВ'], ['j', 'J по графику, мА'], ['r', 'R̄ = U/J, Ом'], ['du', 'ΔU, мВ'], ['dj', 'ΔJ, мА'], ['del', 'δ<sub>R</sub>, %'], ['dr', 'ΔR, Ом'], ['rpr', 'R<sub>пр</sub> с поправкой, Ом']];
+  $('#rBody').innerHTML = '<tr><th class="l">l, см</th>' + data.blocks.map((b, i) => `<th>${esc(b.l) || `l<sub>${i + 1}</sub>`}</th>`).join('') + '</tr>' +
+    RROWS.map(([k, n]) => `<tr><th class="l">${n}</th>${data.R.map((r, i) => `<td>${inp(`R.${i}.${k}`, r[k], `${k} ${i + 1}`)}</td>`).join('')}</tr>`).join('');
+  // 6. удельное сопротивление
+  const PROWS = [['v', 'ρ, × 10⁻⁶ Ом м'], ['del', 'δ<sub>ρ</sub>, %'], ['dv', 'Δρ, × 10⁻⁶ Ом м']];
+  $('#rhoBody').innerHTML = '<tr><th class="l">l, см</th>' + data.blocks.map((b, i) => `<th>${esc(b.l) || `l<sub>${i + 1}</sub>`}</th>`).join('') + '</tr>' +
+    PROWS.map(([k, n]) => `<tr><th class="l">${n}</th>${data.rho.map((r, i) => `<td>${inp(`rho.${i}.${k}`, r[k], `ρ ${k} ${i + 1}`)}</td>`).join('')}</tr>`).join('');
+  $('#rhoRes').innerHTML = `<div class="fline"><span class="cap">Окончательный результат</span>${mi('<mi>ρ</mi><mo>=</mo><mo>(</mo>')}${inp('rhoRes', data.rhoRes, 'ρ результат')}${mi('<mo>±</mo>')}${inp('rhoErr', data.rhoErr, 'Δρ результат')}${mi('<mo>)</mo><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>6</mn></mrow></msup>')}<span class="u">Ом м</span></div>` +
+    fl('Относительная погрешность результата', mi('<msub><mi>δ</mi><mi>ρ</mi></msub><mo>=</mo>'), 'rhoDel', 'δρ', '%');
+  // формулы
+  $('#fBox').innerHTML = [
+    ['Среднее значение (3.1)', '<mover><mi>d</mi><mo>‾</mo></mover><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><mo>∑</mo><msub><mi>d</mi><mi>i</mi></msub><mo>,</mo><mspace width="0.6em"/><mi>Δ</mi><msub><mi>d</mi><mi>i</mi></msub><mo>=</mo><mo>|</mo><msub><mi>d</mi><mi>i</mi></msub><mo>−</mo><mover><mi>d</mi><mo>‾</mo></mover><mo>|</mo>'],
+    ['Случайная погрешность (3.2)', '<mi>Δ</mi><msub><mi>d</mi><mi>случ</mi></msub><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><msqrt><mo>∑</mo><mi>Δ</mi><msubsup><mi>d</mi><mi>i</mi><mn>2</mn></msubsup></msqrt>'],
+    ['Полная погрешность (4.1)', '<mi>Δ</mi><mi>d</mi><mo>=</mo><msqrt><mi>Δ</mi><msubsup><mi>d</mi><mi>случ</mi><mn>2</mn></msubsup><mo>+</mo><mi>Δ</mi><msubsup><mi>d</mi><mi>сист</mi><mn>2</mn></msubsup></msqrt>'],
+    ['Цена деления (9.1), чувствительность (9.3), абсолютная погрешность прибора (9.5)', '<mfrac><msub><mi>x</mi><mi>П</mi></msub><mi>n</mi></mfrac><mo>,</mo><mspace width="0.8em"/><mfrac><mi>n</mi><msub><mi>x</mi><mi>П</mi></msub></mfrac><mo>,</mo><mspace width="0.8em"/><mi>Δ</mi><msub><mi>x</mi><mi>M</mi></msub><mo>=</mo><mfrac><mrow><mi>γ</mi><msub><mi>x</mi><mi>П</mi></msub></mrow><mrow><mn>100</mn><mo>%</mo></mrow></mfrac>'],
+    ['Поправки: схема а (10.3), схема б (10.4)', '<msub><mi>R</mi><mi>пр</mi></msub><mo>≈</mo><mover><mi>R</mi><mo>‾</mo></mover><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mfrac><mover><mi>R</mi><mo>‾</mo></mover><msub><mi>R</mi><mi>V</mi></msub></mfrac><mo>)</mo></mrow><mo>,</mo><mspace width="0.8em"/><msub><mi>R</mi><mi>пр</mi></msub><mo>=</mo><mover><mi>R</mi><mo>‾</mo></mover><mrow><mo>(</mo><mn>1</mn><mo>−</mo><mfrac><msub><mi>R</mi><mi>A</mi></msub><mover><mi>R</mi><mo>‾</mo></mover></mfrac><mo>)</mo></mrow>'],
+    ['Сопротивление по графику и его погрешность', '<mover><mi>R</mi><mo>‾</mo></mover><mo>=</mo><mfrac><mi>U</mi><mi>J</mi></mfrac><mo>,</mo><mspace width="0.8em"/><msub><mi>δ</mi><mi>R</mi></msub><mo>=</mo><msqrt><msup><mrow><mo>(</mo><mfrac><mrow><mi>Δ</mi><mi>U</mi></mrow><mi>U</mi></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mrow><mo>(</mo><mfrac><mrow><mi>Δ</mi><mi>J</mi></mrow><mi>J</mi></mfrac><mo>)</mo></mrow><mn>2</mn></msup></msqrt>'],
+    ['Удельное сопротивление и его погрешность', '<mi>ρ</mi><mo>=</mo><mfrac><mrow><msub><mi>R</mi><mi>пр</mi></msub><mi>S</mi></mrow><mi>l</mi></mfrac><mo>,</mo><mspace width="0.8em"/><msub><mi>δ</mi><mi>ρ</mi></msub><mo>=</mo><msqrt><msup><mrow><mo>(</mo><mfrac><mrow><mi>Δ</mi><msub><mi>R</mi><mi>пр</mi></msub></mrow><msub><mi>R</mi><mi>пр</mi></msub></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mrow><mo>(</mo><mfrac><mrow><mi>Δ</mi><mi>S</mi></mrow><mi>S</mi></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mrow><mo>(</mo><mfrac><mrow><mi>Δ</mi><mi>l</mi></mrow><mi>l</mi></mfrac><mo>)</mo></mrow><mn>2</mn></msup></msqrt>']
+  ].map(([c, m]) => `<div class="fline"><span class="cap">${c}</span><math display="block">${m}</math></div>`).join('');
+  $('#conc').value = data.conc;
+  renderGraph();
+}
+$('#v-calc').addEventListener('input', e => {
+  if (e.target.id === 'conc') { data.conc = e.target.value; save(); return; }
+  const p = e.target.dataset && e.target.dataset.p; if (!p) return;
+  setPath(p, e.target.value); save(); renderSteps();
+  if (p.startsWith('blocks') || p.startsWith('R.')) renderGraph();
+  if (/^blocks\.\d\.l$/.test(p)) { $$('#rBody th, #rhoBody th').length; renderHeads(); }
+});
+$('#v-calc').addEventListener('change', e => {
+  if (e.target.tagName === 'SELECT' && e.target.dataset.p) { setPath(e.target.dataset.p, e.target.value); save(); renderSteps(); }
+});
+function renderHeads() {
+  for (const tb of ['#rBody', '#rhoBody']) {
+    const ths = $$(tb + ' tr:first-child th');
+    data.blocks.forEach((b, i) => { if (ths[i + 1]) ths[i + 1].innerHTML = esc(b.l) || `l<sub>${i + 1}</sub>`; });
+  }
+}
+$('#moveBtn').addEventListener('click', () => {
+  const groups = [];
+  for (const r of data.journal) {
+    const key = num(r.l);
+    let g = groups.find(x => Math.abs(x.key - key) < 1e-9);
+    if (!g) { g = { key, l: r.l, rows: [] }; groups.push(g); }
+    g.rows.push(r);
+  }
+  if (!groups.length) { toast('В журнале пока нет отсчётов'); return; }
+  let n = 0;
+  groups.slice(0, 3).forEach((g, i) => {
+    const b = data.blocks[i]; b.l = g.l;
+    g.rows.slice(0, NROW).forEach((r, k) => { b.rows[k].u = r.u; b.rows[k].j = r.j; n++; });
+  });
+  save(); renderCalc(); renderSteps();
+  toast(groups.length > 3 ? `Перенесено ${n} отсчётов. В журнале больше трёх длин, взяты первые три` : `Перенесено ${n} отсчётов`, 3200);
+});
+
+/* ---------- график U = f(J) ---------- */
+const SER = ['#15803D', '#2563EB', '#C2410C'];
+function niceMax(v, steps) { for (const s of steps) if (v <= s) return s; return Math.ceil(v / 100) * 100; }
+function renderGraph() {
+  const W = 660, H = 400, m = { l: 58, r: 22, t: 16, b: 48 };
+  const pts = data.blocks.map(b => b.rows.map(r => ({ j: num(r.jm), u: num(r.um) })).filter(p => isFinite(p.j) && isFinite(p.u)));
+  let mj = 0, mu = 0;
+  pts.flat().forEach(p => { mj = Math.max(mj, p.j); mu = Math.max(mu, p.u); });
+  data.R.forEach(r => { const u = num(r.u), j = num(r.j); if (u > 0 && j > 0) { mj = Math.max(mj, j); mu = Math.max(mu, u); } });
+  const xmax = niceMax(mj * 1.08 || 150, [25, 50, 75, 100, 125, 150, 175, 200]);
+  const ymax = niceMax(mu * 1.08 || 300, [50, 100, 150, 200, 250, 300, 350, 400]);
+  const X = v => m.l + (W - m.l - m.r) * v / xmax, Y = v => H - m.b - (H - m.t - m.b) * v / ymax;
+  const xs = xmax / 5, ys = ymax / 5;
+  let s = '';
+  for (let v = 0; v <= xmax + 1e-9; v += xs) s += `<line x1="${f1(X(v))}" y1="${m.t}" x2="${f1(X(v))}" y2="${H - m.b}" stroke="#E5EAE6"/><text x="${f1(X(v))}" y="${H - m.b + 18}" text-anchor="middle" font-size="12" font-family="IBM Plex Mono" fill="#5B655F">${+v.toFixed(1)}</text>`;
+  for (let v = 0; v <= ymax + 1e-9; v += ys) s += `<line x1="${m.l}" y1="${f1(Y(v))}" x2="${W - m.r}" y2="${f1(Y(v))}" stroke="#E5EAE6"/><text x="${m.l - 8}" y="${f1(Y(v) + 4)}" text-anchor="end" font-size="12" font-family="IBM Plex Mono" fill="#5B655F">${+v.toFixed(1)}</text>`;
+  s += `<line x1="${m.l}" y1="${H - m.b}" x2="${W - m.r}" y2="${H - m.b}" stroke="#2F3833"/><line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${H - m.b}" stroke="#2F3833"/>`;
+  s += `<text x="${W - m.r}" y="${H - 8}" text-anchor="end" font-size="13" font-family="Manrope" font-style="italic" fill="#141A16">J, мА</text>`;
+  s += `<text x="14" y="${m.t + 4}" font-size="13" font-family="Manrope" font-style="italic" fill="#141A16" transform="rotate(-90 14 ${m.t + 4})" text-anchor="end">U, мВ</text>`;
+  data.R.forEach((r, i) => {
+    const u = num(r.u), j = num(r.j);
+    if (!(u > 0 && j > 0)) return;
+    const k = u / j, xe = Math.min(xmax, ymax / k);
+    s += `<line x1="${X(0)}" y1="${Y(0)}" x2="${f1(X(xe))}" y2="${f1(Y(xe * k))}" stroke="${SER[i]}" stroke-width="2"/>`;
+    s += `<path d="M${f1(X(j))},${f1(Y(0))} V${f1(Y(u))} H${X(0)}" fill="none" stroke="${SER[i]}" stroke-width="1" stroke-dasharray="5 4" opacity=".7"/>`;
+    s += `<text x="${f1(X(j) + 4)}" y="${H - m.b - 6}" font-size="11.5" font-family="IBM Plex Mono" fill="${SER[i]}">R = ${esc(r.u)}/${esc(r.j)}</text>`;
+  });
+  pts.forEach((ps, i) => ps.forEach(p => { s += `<circle cx="${f1(X(p.j))}" cy="${f1(Y(p.u))}" r="4" fill="#fff" stroke="${SER[i]}" stroke-width="2"/>`; }));
+  if (!pts.flat().length) s += `<text x="${(m.l + W - m.r) / 2}" y="${(m.t + H - m.b) / 2}" text-anchor="middle" font-size="13" font-family="Manrope" fill="#5B655F">Переведите отсчёты в мВ и мА в таблице 4, и здесь появятся точки</text>`;
+  $('#graph').innerHTML = s;
+  $('#legend').innerHTML = data.blocks.map((b, i) => `<span><i style="background:${SER[i]}"></i>l<sub>${i + 1}</sub>${filled(b.l) ? ' = ' + esc(b.l) + ' см' : ''}</span>`).join('');
+}
+
+/* ---------- ход работы ---------- */
+function renderSteps() {
+  const rowsFilled = b => b.rows.filter(r => filled(r.u) && filled(r.j)).length;
+  const jGroups = {};
+  data.journal.forEach(r => { const k = String(num(r.l)); jGroups[k] = (jGroups[k] || 0) + 1; });
+  const jMax = Math.max(0, ...Object.values(jGroups)), jFull = Object.values(jGroups).filter(n => n >= 10).length;
+  const chN = Object.values(data.ch).flat().filter(filled).length;
+  const s4 = [flags.plug, flags.power, flags.w3, flags.w2, flags.bracket, flags.v23,
+    jMax >= 10 || data.blocks.some(b => rowsFilled(b) >= 10),
+    data.R.some(r => filled(r.rpr)),
+    data.blocks.some(b => filled(b.l)),
+    jFull >= 3 || data.blocks.filter(b => rowsFilled(b) >= 10).length >= 3,
+    filled(data.rhoRes) && filled(data.rhoErr)];
+  const done = [
+    data.d.filter(filled).length >= 8 && filled(data.S),
+    chN >= 12,
+    filled(data.corrA) && filled(data.corrB) && !!data.scheme,
+    s4.slice(0, 10).every(Boolean),
+    ...s4
+  ];
+  $$('#steps li').forEach((li, i) => li.classList.toggle('done', !!done[i]));
+}
+
+/* ---------- вкладки ---------- */
+let currentTab = 'setup';
+function showTab(name) {
+  if (!['setup', 'calc', 'theory'].includes(name)) name = 'setup';
+  currentTab = name;
+  $$('.view').forEach(v => v.hidden = v.id !== 'v-' + name);
+  $$('.tabs a').forEach(a => a.setAttribute('aria-current', a.dataset.tab === name ? 'page' : 'false'));
+  if (name === 'calc') renderCalc();
+}
+$$('.tabs a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); history.replaceState(null, '', '#' + a.dataset.tab); showTab(a.dataset.tab); }));
+window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+let resetArm = 0;
+$('#restartBtn').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if (performance.now() - resetArm > 3000) { resetArm = performance.now(); b.textContent = 'Точно? Нажмите ещё раз'; setTimeout(() => { b.textContent = 'Начать заново'; }, 3000); return; }
+  try { localStorage.removeItem(KEY); } catch (err) {}
+  location.hash = ''; location.reload();
+});
+
+/* ---------- главный цикл ---------- */
+let last = performance.now();
+function frame(ts) {
+  const rdt = Math.min(0.05, Math.max(0, (ts - last) / 1000)); last = ts;
+  try {
+    circuit();
+    let left = rdt;
+    while (left > 1e-6) { const h = Math.min(1 / 240, left); meterStep(h); left -= h; }
+    if (currentTab === 'setup') renderMeters();
+  } catch (err) { console.error(err); }
+  requestAnimationFrame(frame);
+}
+
+renderPanel(); renderColumn(); renderMicro();
+showTab(location.hash.slice(1) || 'setup');
+renderJournal(); renderSteps();
+save();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+
+/* ---------- телефон ---------- */
+$('#stand').addEventListener('touchstart', e => { if (e.target.closest && e.target.closest('.knob, .drag')) e.preventDefault(); }, { passive: false });
+try { if (window.matchMedia('(max-width:860px)').matches) { const sb = document.querySelector('details.stepsbox'); if (sb) sb.open = false; } } catch (e) {}
+(() => {
+  const b = document.getElementById('fitBtn'); if (!b) return;
+  b.addEventListener('click', () => {
+    const w = document.querySelector('.stand-wrap'), v = !w.classList.contains('fit');
+    w.classList.toggle('fit', v); b.setAttribute('aria-pressed', String(v)); b.textContent = v ? 'Обычный размер' : 'Вписать в экран';
+  });
+})();
+const unlock = () => { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) {} };
+document.addEventListener('touchend', unlock, { passive: true });
+document.addEventListener('click', unlock);
+window.__lab = { st, mic, hidden, data, flags, Rwire, setL, setMicG, S_TRUE };   // для автоматической проверки
+})();
+</script>
+</body>
+</html>
